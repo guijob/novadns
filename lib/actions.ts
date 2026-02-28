@@ -1,12 +1,14 @@
 "use server"
 
 import { randomBytes } from "crypto"
-import { eq, and } from "drizzle-orm"
+import { eq, and, count } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { db } from "./db"
 import { hosts, updateLog } from "./schema"
 import { getSession } from "./auth"
+
+const FREE_LIMIT = 3
 
 function token() {
   return randomBytes(32).toString("hex")
@@ -16,10 +18,20 @@ function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")
 }
 
+async function checkPlanLimit(clientId: number, plan: string) {
+  if (plan === "pro") return null
+  const [{ value }] = await db.select({ value: count() }).from(hosts).where(and(eq(hosts.clientId, clientId), eq(hosts.active, true)))
+  if (value >= FREE_LIMIT) return { error: "plan_limit" }
+  return null
+}
+
 // ── Create (redirect variant — used by the /hosts/new page) ─────────
 export async function createHost(formData: FormData) {
   const session = await getSession()
   if (!session) redirect("/login")
+
+  const limited = await checkPlanLimit(session.id, session.plan)
+  if (limited) return limited
 
   const subdomain = slugify(String(formData.get("subdomain") ?? ""))
   const description = String(formData.get("description") ?? "").trim() || null
@@ -40,6 +52,9 @@ export async function createHost(formData: FormData) {
 export async function addHost(formData: FormData) {
   const session = await getSession()
   if (!session) redirect("/login")
+
+  const limited = await checkPlanLimit(session.id, session.plan)
+  if (limited) return limited
 
   const subdomain = slugify(String(formData.get("subdomain") ?? ""))
   const description = String(formData.get("description") ?? "").trim() || null
@@ -90,7 +105,7 @@ export async function regenerateToken(id: number) {
   revalidatePath(`/dashboard/hosts/${id}`)
 }
 
-// ── Delete ──────────────────────────────────────────────────────────
+// ── Delete (redirect variant — used by the detail page) ─────────────
 export async function deleteHost(id: number) {
   const session = await getSession()
   if (!session) redirect("/login")
@@ -99,6 +114,17 @@ export async function deleteHost(id: number) {
 
   revalidatePath("/dashboard")
   redirect("/dashboard")
+}
+
+// ── Delete (returns result — used by the sheet) ──────────────────────
+export async function removeHost(id: number) {
+  const session = await getSession()
+  if (!session) redirect("/login")
+
+  await db.delete(hosts).where(and(eq(hosts.id, id), eq(hosts.clientId, session.id)))
+
+  revalidatePath("/dashboard")
+  return { ok: true }
 }
 
 // ── Fetch helpers (used by server components) ───────────────────────

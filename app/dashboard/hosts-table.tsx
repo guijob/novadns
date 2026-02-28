@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { addHost } from "@/lib/actions"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,8 +11,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFo
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { PlusSignIcon, Settings01Icon } from "@hugeicons/core-free-icons"
+import { PlusSignIcon, Settings01Icon, CrownIcon } from "@hugeicons/core-free-icons"
+import { ManageHostSheet } from "@/components/manage-host-sheet"
 import type { Host } from "@/lib/schema"
+
+const FREE_LIMIT = 3
 
 function statusBadge(lastSeen: Date | null, active: boolean) {
   if (!active) return <Badge variant="secondary">Disabled</Badge>
@@ -33,12 +35,16 @@ function timeAgo(date: Date | null) {
   return `${Math.floor(secs / 86400)}d ago`
 }
 
-export function HostsTable({ hosts, base }: { hosts: Host[]; base: string }) {
+export function HostsTable({ hosts, base, plan }: { hosts: Host[]; base: string; plan: string }) {
   const router = useRouter()
   const [query, setQuery]   = useState("")
-  const [open, setOpen]     = useState(false)
-  const [error, setError]   = useState("")
-  const [loading, setLoading] = useState(false)
+  const [open, setOpen]           = useState(false)
+  const [error, setError]         = useState("")
+  const [loading, setLoading]     = useState(false)
+  const [manageHost, setManageHost] = useState<Host | null>(null)
+
+  const activeCount = hosts.filter(h => h.active).length
+  const atLimit     = plan === "free" && activeCount >= FREE_LIMIT
 
   const filtered = query.trim()
     ? hosts.filter(h =>
@@ -52,8 +58,8 @@ export function HostsTable({ hosts, base }: { hosts: Host[]; base: string }) {
     e.preventDefault()
     setError(""); setLoading(true)
     const result = await addHost(new FormData(e.currentTarget))
-    if (result?.error) {
-      setError(result.error)
+    if ("error" in result && result.error) {
+      setError(result.error === "plan_limit" ? "You've reached the free plan limit." : result.error)
       setLoading(false)
       return
     }
@@ -82,6 +88,7 @@ export function HostsTable({ hosts, base }: { hosts: Host[]; base: string }) {
           <TableHeader>
             <TableRow>
               <TableHead>Subdomain</TableHead>
+              <TableHead>Active</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>IPv4</TableHead>
               <TableHead>Last seen</TableHead>
@@ -93,18 +100,23 @@ export function HostsTable({ hosts, base }: { hosts: Host[]; base: string }) {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-12">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-12">
                   {query ? "No hosts match your search." : "No hosts yet."}
                 </TableCell>
               </TableRow>
             ) : (
               filtered.map(host => (
-                <TableRow key={host.id} className={host.active ? "" : "opacity-60"}>
+                <TableRow key={host.id}>
                   <TableCell>
                     <div className="font-medium">{host.subdomain}.{base}</div>
                     {host.description && (
                       <div className="text-xs text-muted-foreground">{host.description}</div>
                     )}
+                  </TableCell>
+                  <TableCell>
+                    {host.active
+                      ? <Badge className="bg-green-500/15 text-green-700 dark:text-green-400">Active</Badge>
+                      : <Badge variant="secondary">Inactive</Badge>}
                   </TableCell>
                   <TableCell>{statusBadge(host.lastSeenAt, host.active)}</TableCell>
                   <TableCell className="font-mono">{host.ipv4 ?? "—"}</TableCell>
@@ -112,7 +124,7 @@ export function HostsTable({ hosts, base }: { hosts: Host[]; base: string }) {
                   <TableCell>{new Date(host.createdAt).toLocaleString()}</TableCell>
                   <TableCell>{host.ttl}s</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`/dashboard/hosts/${host.id}`} />}>
+                    <Button variant="outline" size="sm" onClick={() => setManageHost(host)}>
                       <HugeiconsIcon icon={Settings01Icon} strokeWidth={2} />
                       Manage
                     </Button>
@@ -130,36 +142,68 @@ export function HostsTable({ hosts, base }: { hosts: Host[]; base: string }) {
             <SheetTitle>Add host</SheetTitle>
             <SheetDescription>Create a new dynamic DNS entry under {base}</SheetDescription>
           </SheetHeader>
-          <form id="add-host-form" onSubmit={handleAdd} className="px-6 space-y-4">
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="subdomain">Subdomain</FieldLabel>
-                <div className="flex items-center gap-1">
-                  <Input id="subdomain" name="subdomain" placeholder="home" required className="flex-1" disabled={loading} />
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">.{base}</span>
+
+          {atLimit ? (
+            <>
+              <div className="px-6 flex flex-col items-center text-center gap-4 py-8">
+                <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
+                  <HugeiconsIcon icon={CrownIcon} strokeWidth={2} className="size-6 text-primary" />
                 </div>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="description">
-                  Description <span className="text-muted-foreground font-normal">(optional)</span>
-                </FieldLabel>
-                <Textarea id="description" name="description" placeholder="Home router, office server…" rows={2} disabled={loading} />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="ttl">TTL (seconds)</FieldLabel>
-                <Input id="ttl" name="ttl" type="number" defaultValue={60} min={30} max={86400} disabled={loading} />
-              </Field>
-              {error && <p className="text-sm text-destructive">{error}</p>}
-            </FieldGroup>
-          </form>
-          <SheetFooter>
-            <Button type="submit" form="add-host-form" disabled={loading}>
-              {loading ? "Creating…" : "Create host"}
-            </Button>
-            <SheetClose render={<Button variant="outline" />}>Cancel</SheetClose>
-          </SheetFooter>
+                <div className="space-y-1">
+                  <p className="font-semibold">Free plan limit reached</p>
+                  <p className="text-sm text-muted-foreground">
+                    You&apos;ve used all {FREE_LIMIT} active hosts included in the free plan. Upgrade to Pro to continue adding hosts.
+                  </p>
+                </div>
+                <Button className="w-full" disabled>
+                  Upgrade to Pro — coming soon
+                </Button>
+              </div>
+              <SheetFooter>
+                <SheetClose render={<Button variant="outline" className="w-full" />}>Close</SheetClose>
+              </SheetFooter>
+            </>
+          ) : (
+            <>
+              <form id="add-host-form" onSubmit={handleAdd} className="px-6 space-y-4" autoComplete="off">
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="subdomain">Subdomain</FieldLabel>
+                    <div className="flex items-center gap-1">
+                      <Input id="subdomain" name="subdomain" placeholder="home" required className="flex-1" disabled={loading} />
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">.{base}</span>
+                    </div>
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="description">
+                      Description <span className="text-muted-foreground font-normal">(optional)</span>
+                    </FieldLabel>
+                    <Textarea id="description" name="description" placeholder="Home router, office server…" rows={2} disabled={loading} />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="ttl">TTL (seconds)</FieldLabel>
+                    <Input id="ttl" name="ttl" type="number" defaultValue={60} min={30} max={86400} disabled={loading} />
+                  </Field>
+                  {error && <p className="text-sm text-destructive">{error}</p>}
+                </FieldGroup>
+              </form>
+              <SheetFooter>
+                <Button type="submit" form="add-host-form" disabled={loading}>
+                  {loading ? "Creating…" : "Create host"}
+                </Button>
+                <SheetClose render={<Button variant="outline" />}>Cancel</SheetClose>
+              </SheetFooter>
+            </>
+          )}
         </SheetContent>
       </Sheet>
+
+      <ManageHostSheet
+        host={manageHost}
+        base={base}
+        open={!!manageHost}
+        onOpenChange={open => { if (!open) setManageHost(null) }}
+      />
     </>
   )
 }

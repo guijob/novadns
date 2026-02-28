@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { ListViewIcon, PlusSignIcon } from "@hugeicons/core-free-icons"
+import { ListViewIcon, PlusSignIcon, CrownIcon } from "@hugeicons/core-free-icons"
 import {
   Sidebar,
   SidebarContent,
@@ -69,7 +69,12 @@ export function AppSidebar({ email }: AppSidebarProps) {
   )
 }
 
-export function DashboardShell({ email, children }: { email: string; children: React.ReactNode }) {
+const FREE_LIMIT = 3
+
+export function DashboardShell({ email, plan, activeCount, children }: { email: string; plan: string; activeCount: number; children: React.ReactNode }) {
+  const atLimit = plan === "free" && activeCount >= FREE_LIMIT
+  const nearLimit = plan === "free" && activeCount >= FREE_LIMIT - 1
+
   return (
     <SidebarProvider>
       <AppSidebar email={email} />
@@ -81,6 +86,15 @@ export function DashboardShell({ email, children }: { email: string; children: R
             <UserMenu email={email} />
           </div>
         </header>
+        {nearLimit && (
+          <div className={`flex items-center gap-3 px-4 py-2.5 text-sm ${atLimit ? "bg-destructive/10 text-destructive" : "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"}`}>
+            <HugeiconsIcon icon={CrownIcon} strokeWidth={2} className="size-4 shrink-0" />
+            {atLimit
+              ? <>You&apos;ve reached the free plan limit of {FREE_LIMIT} active hosts. Upgrade to Pro to keep adding hosts.</>
+              : <>You&apos;re using {activeCount} of {FREE_LIMIT} active hosts on the free plan.</>
+            }
+          </div>
+        )}
         <main className="flex-1 p-6 overflow-y-auto">
           {children}
         </main>

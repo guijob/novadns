@@ -8,6 +8,7 @@ export const clients = pgTable("clients", {
   email:        varchar("email", { length: 254 }).notNull().unique(),
   passwordHash: varchar("password_hash", { length: 255 }).notNull(),
   name:         varchar("name", { length: 100 }).notNull(),
+  plan:         varchar("plan", { length: 20 }).notNull().default("free"), // "free" | "pro"
   active:       boolean("active").notNull().default(true),
   createdAt:    timestamp("created_at").notNull().defaultNow(),
   updatedAt:    timestamp("updated_at").notNull().defaultNow(),
