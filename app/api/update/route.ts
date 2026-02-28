@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { eq } from "drizzle-orm"
+import { compare } from "bcryptjs"
+import { eq, and } from "drizzle-orm"
 import { db } from "@/lib/db"
-import { hosts, updateLog } from "@/lib/schema"
+import { hosts, hostGroups, updateLog } from "@/lib/schema"
+import { redis, hostUpdateKey } from "@/lib/redis"
 
 // DynDNS-compatible response codes
 const res = (body: string, status = 200) =>
@@ -26,16 +28,62 @@ function isValidIpv6(ip: string) {
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
-  const token = searchParams.get("token")
-  const ipParam = searchParams.get("ip")     // optional — falls back to caller IP
-  const ip6Param = searchParams.get("ip6")   // optional explicit IPv6
+  const tokenParam   = searchParams.get("token")
+  const hostnameParam = searchParams.get("hostname") // used with Basic Auth
+  const ipParam  = searchParams.get("ip")   // optional — falls back to caller IP
+  const ip6Param = searchParams.get("ip6")  // optional explicit IPv6
 
-  if (!token) return res("badauth", 401)
+  let host: Awaited<ReturnType<typeof db.query.hosts.findFirst>>
 
-  // Look up host by token
-  const host = await db.query.hosts.findFirst({
-    where: eq(hosts.token, token),
-  })
+  if (tokenParam) {
+    // Token-based auth (existing)
+    host = await db.query.hosts.findFirst({ where: eq(hosts.token, tokenParam) })
+  } else {
+    // Basic Auth: Authorization: Basic base64(username:password)
+    const authHeader = req.headers.get("authorization") ?? ""
+    if (!authHeader.startsWith("Basic ")) return res("badauth", 401)
+
+    let username: string, password: string
+    try {
+      const decoded = Buffer.from(authHeader.slice(6), "base64").toString("utf8")
+      const colon   = decoded.indexOf(":")
+      username = decoded.slice(0, colon)
+      password = decoded.slice(colon + 1)
+    } catch {
+      return res("badauth", 401)
+    }
+
+    if (!username || !password) return res("badauth", 401)
+
+    // 1. Try host-level credentials
+    const candidate = await db.query.hosts.findFirst({ where: eq(hosts.username, username) })
+    if (candidate?.passwordHash && await compare(password, candidate.passwordHash)) {
+      // If ?hostname= is supplied, verify it matches the found host
+      if (hostnameParam) {
+        const base = process.env.BASE_DOMAIN ?? "novadns.io"
+        const expectedSubdomain = hostnameParam.replace(`.${base}`, "")
+        if (candidate.subdomain !== expectedSubdomain) return res("badauth", 401)
+      }
+      host = candidate
+    } else {
+      // 2. Try group-level credentials
+      const group = await db.query.hostGroups.findFirst({ where: eq(hostGroups.username, username) })
+      if (!group?.passwordHash) return res("badauth", 401)
+      const validGroup = await compare(password, group.passwordHash)
+      if (!validGroup) return res("badauth", 401)
+
+      // Group auth requires ?hostname= to identify the target host
+      if (!hostnameParam) return res("badauth", 401)
+
+      const base = process.env.BASE_DOMAIN ?? "novadns.io"
+      const subdomain = hostnameParam.replace(`.${base}`, "")
+      const groupHost = await db.query.hosts.findFirst({
+        where: and(eq(hosts.subdomain, subdomain), eq(hosts.groupId, group.id)),
+      })
+      if (!groupHost) return res("badauth", 401)
+      host = groupHost
+    }
+  }
 
   if (!host || !host.active) return res("badauth", 401)
 
@@ -50,13 +98,10 @@ export async function GET(req: NextRequest) {
     ? (isValidIpv6(ip6Param) ? ip6Param : null)
     : (isValidIpv6(caller) ? caller : host.ipv6)   // auto-detect if caller is IPv6
 
-  // No-change check
-  if (newIpv4 === host.ipv4 && newIpv6 === host.ipv6) {
-    return res(`nochg ${newIpv4 ?? newIpv6 ?? ""}`)
-  }
-
   const now = new Date()
+  const ipChanged = newIpv4 !== host.ipv4 || newIpv6 !== host.ipv6
 
+  // Always update lastSeen so the "Online" status stays current
   await db
     .update(hosts)
     .set({
@@ -68,14 +113,19 @@ export async function GET(req: NextRequest) {
     })
     .where(eq(hosts.id, host.id))
 
-  await db.insert(updateLog).values({
-    hostId:   host.id,
-    ipv4:     newIpv4,
-    ipv6:     newIpv6,
-    callerIp: caller,
-  })
+  if (ipChanged) {
+    await db.insert(updateLog).values({
+      hostId:   host.id,
+      ipv4:     newIpv4,
+      ipv6:     newIpv6,
+      callerIp: caller,
+    })
+  }
 
-  return res(`good ${newIpv4 ?? newIpv6 ?? ""}`)
+  // Signal SSE streams for this client
+  await redis.set(hostUpdateKey(host.clientId), Date.now(), { ex: 90 }).catch(() => {})
+
+  return res(ipChanged ? `good ${newIpv4 ?? newIpv6 ?? ""}` : `nochg ${newIpv4 ?? newIpv6 ?? ""}`)
 }
 
 // Routers using POST (some firmware variants)

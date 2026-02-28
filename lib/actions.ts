@@ -1,17 +1,30 @@
 "use server"
 
 import { randomBytes } from "crypto"
-import { eq, and, count } from "drizzle-orm"
+import { hash } from "bcryptjs"
+import { eq, and, count, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { db } from "./db"
-import { hosts, updateLog } from "./schema"
+import { hosts, hostGroups, updateLog } from "./schema"
 import { getSession } from "./auth"
 
 const FREE_LIMIT = 3
 
 function token() {
   return randomBytes(32).toString("hex")
+}
+
+/** Random 10-char lowercase alphanumeric username */
+function genUsername() {
+  return randomBytes(6).toString("hex") // 12 hex chars → take 10
+    .slice(0, 10)
+}
+
+/** Random password in the format xxxx-xxxx-xxxx — easy to enter on router UIs */
+function genPassword() {
+  const seg = () => randomBytes(2).toString("hex") // 4 hex chars per segment
+  return `${seg()}-${seg()}-${seg()}`
 }
 
 function slugify(s: string) {
@@ -42,7 +55,13 @@ export async function createHost(formData: FormData) {
   const exists = await db.query.hosts.findFirst({ where: eq(hosts.subdomain, subdomain) })
   if (exists) return { error: "Subdomain already taken" }
 
-  await db.insert(hosts).values({ clientId: session.id, subdomain, description, ttl, token: token() })
+  const username = genUsername()
+  const password = genPassword()
+
+  await db.insert(hosts).values({
+    clientId: session.id, subdomain, description, ttl,
+    token: token(), username, passwordHash: await hash(password, 10),
+  })
 
   revalidatePath("/dashboard")
   redirect("/dashboard")
@@ -65,10 +84,16 @@ export async function addHost(formData: FormData) {
   const exists = await db.query.hosts.findFirst({ where: eq(hosts.subdomain, subdomain) })
   if (exists) return { error: "Subdomain already taken" }
 
-  await db.insert(hosts).values({ clientId: session.id, subdomain, description, ttl, token: token() })
+  const username = genUsername()
+  const password = genPassword()
+
+  await db.insert(hosts).values({
+    clientId: session.id, subdomain, description, ttl,
+    token: token(), username, passwordHash: await hash(password, 10),
+  })
 
   revalidatePath("/dashboard")
-  return { ok: true }
+  return { ok: true, username, password }
 }
 
 // ── Update ──────────────────────────────────────────────────────────
@@ -103,6 +128,22 @@ export async function regenerateToken(id: number) {
     .where(and(eq(hosts.id, id), eq(hosts.clientId, session.id)))
 
   revalidatePath(`/dashboard/hosts/${id}`)
+}
+
+// ── Regenerate password ─────────────────────────────────────────────
+export async function regenerateHostPassword(id: number) {
+  const session = await getSession()
+  if (!session) redirect("/login")
+
+  const password = genPassword()
+
+  await db
+    .update(hosts)
+    .set({ passwordHash: await hash(password, 10), updatedAt: new Date() })
+    .where(and(eq(hosts.id, id), eq(hosts.clientId, session.id)))
+
+  revalidatePath(`/dashboard/hosts/${id}`)
+  return { password }
 }
 
 // ── Delete (redirect variant — used by the detail page) ─────────────
@@ -161,4 +202,137 @@ export async function getUpdateLog(hostId: number) {
     orderBy: (l, { desc }) => [desc(l.createdAt)],
     limit: 50,
   })
+}
+
+// ── Group actions ────────────────────────────────────────────────
+
+export async function addGroup(formData: FormData) {
+  const session = await getSession()
+  if (!session) redirect("/login")
+
+  const name        = String(formData.get("name") ?? "").trim()
+  const description = String(formData.get("description") ?? "").trim() || null
+
+  if (!name) return { error: "Name is required" }
+
+  const username = genUsername()
+  const password = genPassword()
+
+  await db.insert(hostGroups).values({
+    clientId: session.id, name, description,
+    username, passwordHash: await hash(password, 10),
+  })
+
+  revalidatePath("/dashboard/groups")
+  return { ok: true, username, password }
+}
+
+export async function updateGroup(id: number, formData: FormData) {
+  const session = await getSession()
+  if (!session) redirect("/login")
+
+  const group = await db.query.hostGroups.findFirst({
+    where: and(eq(hostGroups.id, id), eq(hostGroups.clientId, session.id)),
+  })
+  if (!group) return { error: "Not found" }
+
+  const name        = String(formData.get("name") ?? "").trim()
+  const description = String(formData.get("description") ?? "").trim() || null
+
+  if (!name) return { error: "Name is required" }
+
+  await db.update(hostGroups)
+    .set({ name, description, updatedAt: new Date() })
+    .where(eq(hostGroups.id, id))
+
+  revalidatePath("/dashboard/groups")
+  return { ok: true }
+}
+
+export async function removeGroup(id: number) {
+  const session = await getSession()
+  if (!session) redirect("/login")
+
+  await db.delete(hostGroups)
+    .where(and(eq(hostGroups.id, id), eq(hostGroups.clientId, session.id)))
+
+  revalidatePath("/dashboard/groups")
+  return { ok: true }
+}
+
+export async function regenerateGroupPassword(id: number) {
+  const session = await getSession()
+  if (!session) redirect("/login")
+
+  const password = genPassword()
+
+  await db.update(hostGroups)
+    .set({ passwordHash: await hash(password, 10), updatedAt: new Date() })
+    .where(and(eq(hostGroups.id, id), eq(hostGroups.clientId, session.id)))
+
+  revalidatePath("/dashboard/groups")
+  return { password }
+}
+
+export async function getGroups() {
+  const session = await getSession()
+  if (!session) redirect("/login")
+
+  const groups = await db.query.hostGroups.findMany({
+    where: eq(hostGroups.clientId, session.id),
+    orderBy: (g, { desc }) => [desc(g.createdAt)],
+  })
+
+  // Attach host counts
+  const counts = await db
+    .select({ groupId: hosts.groupId, value: count() })
+    .from(hosts)
+    .where(eq(hosts.clientId, session.id))
+    .groupBy(hosts.groupId)
+
+  const countMap = new Map(counts.map(c => [c.groupId, c.value]))
+  return groups.map(g => ({ ...g, hostCount: countMap.get(g.id) ?? 0 }))
+}
+
+export async function getGroupHosts(groupId: number) {
+  const session = await getSession()
+  if (!session) redirect("/login")
+
+  // Verify ownership
+  const group = await db.query.hostGroups.findFirst({
+    where: and(eq(hostGroups.id, groupId), eq(hostGroups.clientId, session.id)),
+  })
+  if (!group) return []
+
+  return db.query.hosts.findMany({
+    where: and(eq(hosts.groupId, groupId), eq(hosts.clientId, session.id)),
+    orderBy: (h, { asc }) => [asc(h.subdomain)],
+  })
+}
+
+export async function assignHostToGroup(hostId: number, groupId: number | null) {
+  const session = await getSession()
+  if (!session) redirect("/login")
+
+  // Verify host ownership
+  const host = await db.query.hosts.findFirst({
+    where: and(eq(hosts.id, hostId), eq(hosts.clientId, session.id)),
+  })
+  if (!host) return { error: "Host not found" }
+
+  // Verify group ownership (if assigning)
+  if (groupId !== null) {
+    const group = await db.query.hostGroups.findFirst({
+      where: and(eq(hostGroups.id, groupId), eq(hostGroups.clientId, session.id)),
+    })
+    if (!group) return { error: "Group not found" }
+  }
+
+  await db.update(hosts)
+    .set({ groupId, updatedAt: new Date() })
+    .where(eq(hosts.id, hostId))
+
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/groups")
+  return { ok: true }
 }

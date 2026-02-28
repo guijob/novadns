@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { ListViewIcon, PlusSignIcon, CrownIcon } from "@hugeicons/core-free-icons"
+import { ListViewIcon, CrownIcon, FolderLibraryIcon } from "@hugeicons/core-free-icons"
 import {
   Sidebar,
   SidebarContent,
@@ -19,8 +19,8 @@ import { Separator } from "@/components/ui/separator"
 import { UserMenu } from "@/components/user-menu"
 
 const navItems = [
-  { href: "/dashboard",           label: "Hosts",    icon: ListViewIcon, exact: true },
-  { href: "/dashboard/hosts/new", label: "Add host", icon: PlusSignIcon, exact: true },
+  { href: "/dashboard",        label: "Hosts",  icon: ListViewIcon,      exact: true  },
+  { href: "/dashboard/groups", label: "Groups", icon: FolderLibraryIcon, exact: false },
 ]
 
 interface AppSidebarProps {
@@ -71,12 +71,12 @@ export function AppSidebar({ email }: AppSidebarProps) {
 
 const FREE_LIMIT = 3
 
-export function DashboardShell({ email, plan, activeCount, children }: { email: string; plan: string; activeCount: number; children: React.ReactNode }) {
+export function DashboardShell({ email, plan, activeCount, sidebarOpen = true, children }: { email: string; plan: string; activeCount: number; sidebarOpen?: boolean; children: React.ReactNode }) {
   const atLimit = plan === "free" && activeCount >= FREE_LIMIT
   const nearLimit = plan === "free" && activeCount >= FREE_LIMIT - 1
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={sidebarOpen}>
       <AppSidebar email={email} />
       <div className="flex flex-1 flex-col min-w-0">
         <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">

@@ -242,68 +242,79 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Right — terminal window */}
+          {/* Right — host dashboard preview */}
           <div className="border border-border bg-card shadow-2xl">
-            {/* Title bar */}
-            <div className="border-b border-border px-4 py-2.5 flex items-center gap-1.5 bg-muted/40">
-              <div className="size-3 bg-destructive/50 rounded-full" />
-              <div className="size-3 bg-yellow-500/50 rounded-full" />
-              <div className="size-3 bg-green-500/50 rounded-full" />
-              <span className="ml-3 text-xs text-muted-foreground font-mono">bash — 80×24</span>
+            {/* Panel header */}
+            <div className="border-b border-border px-4 py-3 flex items-center justify-between bg-muted/40">
+              <span className="text-xs font-semibold">My Hosts</span>
+              <div className="flex items-center gap-1.5">
+                <span className="size-1.5 rounded-full bg-green-500" />
+                <span className="text-xs text-muted-foreground">3 online</span>
+              </div>
             </div>
 
-            {/* Terminal body */}
-            <div className="p-5 font-mono text-xs sm:text-sm space-y-5">
+            {/* Host rows */}
+            <div className="divide-y divide-border">
+              {[
+                {
+                  name: "home.novadns.io",
+                  ipv4: "203.0.113.42",
+                  ipv6: "2001:db8::1",
+                  seen: "just now",
+                  online: true,
+                },
+                {
+                  name: "office.novadns.io",
+                  ipv4: "198.51.100.7",
+                  ipv6: "2001:db8:a::1",
+                  seen: "2 min ago",
+                  online: true,
+                },
+                {
+                  name: "vpn.novadns.io",
+                  ipv4: "192.0.2.55",
+                  ipv6: "2001:db8:b::1",
+                  seen: "5 min ago",
+                  online: true,
+                },
+                {
+                  name: "nas.novadns.io",
+                  ipv4: "203.0.113.88",
+                  ipv6: null,
+                  seen: "3 h ago",
+                  online: false,
+                },
+              ].map((host) => (
+                <div key={host.name} className="px-4 py-3.5 group hover:bg-muted/40 transition-colors">
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className={`size-1.5 rounded-full shrink-0 ${host.online ? "bg-green-500" : "bg-muted-foreground/40"}`}
+                      />
+                      <span className="text-sm font-medium truncate">{host.name}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground shrink-0">{host.seen}</span>
+                  </div>
+                  <div className="pl-3.5 space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono text-muted-foreground w-7">IPv4</span>
+                      <span className="text-xs font-mono text-foreground/80">{host.ipv4}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono text-muted-foreground w-7">IPv6</span>
+                      <span className="text-xs font-mono text-foreground/80">
+                        {host.ipv6 ?? <span className="text-muted-foreground/50">—</span>}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-              {/* Block 1: token update */}
-              <div>
-                <div className="text-muted-foreground mb-1.5 text-xs"># simple token-based update</div>
-                <div>
-                  <span className="text-green-500 dark:text-green-400">$</span>
-                  <span className="text-foreground/90"> curl \</span>
-                </div>
-                <div className="pl-4 text-primary break-all">
-                  &quot;https://novadns.io/api/update?token=a8f2...&quot;
-                </div>
-                <div className="mt-2 pl-3 border-l-2 border-border text-muted-foreground text-xs">
-                  {`{ "ipv4": "203.0.113.42", "ipv6": "2001:db8::1" }`}
-                </div>
-              </div>
-
-              <div className="border-t border-border" />
-
-              {/* Block 2: DynDNS compat */}
-              <div>
-                <div className="text-muted-foreground mb-1.5 text-xs"># dyndns compatible (basic auth)</div>
-                <div>
-                  <span className="text-green-500 dark:text-green-400">$</span>
-                  <span className="text-foreground/90"> curl \</span>
-                </div>
-                <div className="pl-4 text-primary break-all">
-                  &quot;https://user:token@novadns.io/nic/update
-                </div>
-                <div className="pl-4 text-primary break-all">
-                  &nbsp;&nbsp;?hostname=home.novadns.io&amp;myip=203.0.113.42&quot;
-                </div>
-                <div className="mt-2 pl-3 border-l-2 border-border text-muted-foreground text-xs">
-                  good 203.0.113.42
-                </div>
-              </div>
-
-              <div className="border-t border-border" />
-
-              {/* Block 3: IPv6 subnet */}
-              <div>
-                <div className="text-muted-foreground mb-1.5 text-xs"># ipv6 subnet tracking</div>
-                <div>
-                  <span className="text-green-500 dark:text-green-400">$</span>
-                  <span className="text-foreground/90"> curl </span>
-                  <span className="text-primary break-all">&quot;...&amp;myip=2001:db8::/48&quot;</span>
-                </div>
-                <div className="mt-2 pl-3 border-l-2 border-border text-muted-foreground text-xs">
-                  good 2001:db8::/48
-                </div>
-              </div>
+            {/* Panel footer */}
+            <div className="border-t border-border px-4 py-2.5 flex items-center justify-between bg-muted/20">
+              <span className="text-xs text-muted-foreground">novadns.io</span>
+              <span className="text-xs text-muted-foreground font-mono">4 hosts · free plan</span>
             </div>
           </div>
         </div>
