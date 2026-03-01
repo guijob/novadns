@@ -109,16 +109,23 @@ const freeFeatures = [
 
 const freeMissing = ["IPv6 subnet support", "Custom TTL", "Priority support"]
 
-const proFeatures = [
-  "Unlimited hosts",
+const paidFeatures = [
   "IPv4 + IPv6",
   "Token authentication",
+  "Basic Auth credentials",
+  "Host groups",
   "Update logs",
   "DynDNS / NoIP compatible",
   "IPv6 subnet support",
   "Custom TTL",
   "Priority support",
-  "Early access features",
+]
+
+const paidTiers = [
+  { label: "Starter",    hosts: 25,  price: 5  },
+  { label: "Pro",        hosts: 100, price: 15, popular: true },
+  { label: "Business",   hosts: 200, price: 25 },
+  { label: "Enterprise", hosts: 500, price: 50 },
 ]
 
 const faqs = [
@@ -136,7 +143,7 @@ const faqs = [
   },
   {
     q: "What is the difference between Free and Pro?",
-    a: "The Free plan covers 3 active hosts with full dual-stack support, token authentication, and update logs — more than enough for a home lab or small deployment. Pro removes the host limit and adds custom TTL, IPv6 subnet tracking, and priority support.",
+    a: "The Free plan covers 3 active hosts — more than enough for a home lab. Paid plans start at $5/mo for 25 hosts and scale up to 500 hosts at $50/mo. All paid plans include custom TTL, IPv6 subnet tracking, and priority support.",
   },
   {
     q: "Can I rotate my update token?",
@@ -502,71 +509,69 @@ export default function LandingPage() {
               Simple, honest pricing.
             </h2>
             <p className="mt-4 text-muted-foreground max-w-lg">
-              Start for free. Upgrade when you outgrow the limits.
+              Start for free. Scale up as you grow.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 max-w-3xl gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
 
             {/* Free */}
-            <div className="border border-border p-8">
+            <div className="border border-border p-6 flex flex-col">
               <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-4">Free</p>
-              <div className="mb-1.5">
-                <span className="text-4xl font-bold">$0</span>
-                <span className="text-muted-foreground text-sm ml-1.5">/month</span>
+              <div className="mb-1">
+                <span className="text-3xl font-bold">$0</span>
+                <span className="text-muted-foreground text-sm ml-1">/mo</span>
               </div>
-              <p className="text-sm text-muted-foreground mb-8">Get started, no card required.</p>
-
-              <ul className="space-y-2.5 mb-10">
+              <p className="text-xs text-muted-foreground mt-1 mb-6">3 hosts · no card needed</p>
+              <ul className="space-y-2 mb-6 flex-1">
                 {freeFeatures.map((item) => (
-                  <li key={item} className="flex items-center gap-2.5 text-sm">
-                    <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={1.5} className="size-4 text-primary shrink-0" />
+                  <li key={item} className="flex items-start gap-2 text-xs">
+                    <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={1.5} className="size-3.5 text-primary shrink-0 mt-px" />
                     <span>{item}</span>
                   </li>
                 ))}
                 {freeMissing.map((item) => (
-                  <li key={item} className="flex items-center gap-2.5 text-sm text-muted-foreground">
-                    <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-4 shrink-0" />
+                  <li key={item} className="flex items-start gap-2 text-xs text-muted-foreground">
+                    <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-3.5 shrink-0 mt-px" />
                     <span>{item}</span>
                   </li>
                 ))}
               </ul>
-
-              <Button variant="outline" className="w-full" nativeButton={false} render={<Link href="/register" />}>
-                Get Started Free
+              <Button variant="outline" size="sm" className="w-full" nativeButton={false} render={<Link href="/register" />}>
+                Get started
               </Button>
             </div>
 
-            {/* Pro */}
-            <div className="border-2 border-primary p-8 relative">
-              <div className="absolute top-4 right-4">
-                <span className="text-xs font-mono bg-primary text-primary-foreground px-2 py-1">
-                  POPULAR
-                </span>
+            {/* Paid tiers */}
+            {paidTiers.map(tier => (
+              <div key={tier.label} className={`p-6 flex flex-col relative ${tier.popular ? "border-2 border-primary" : "border border-border"}`}>
+                {tier.popular && (
+                  <span className="absolute top-3 right-3 text-[10px] font-mono bg-primary text-primary-foreground px-1.5 py-0.5">
+                    POPULAR
+                  </span>
+                )}
+                <p className={`text-xs font-mono uppercase tracking-widest mb-4 flex items-center gap-1 ${tier.popular ? "text-primary" : "text-muted-foreground"}`}>
+                  <HugeiconsIcon icon={CrownIcon} strokeWidth={2} className="size-3" />
+                  {tier.label}
+                </p>
+                <div className="mb-1">
+                  <span className="text-3xl font-bold">${tier.price}</span>
+                  <span className="text-muted-foreground text-sm ml-1">/mo</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 mb-6">{tier.hosts} hosts</p>
+                <ul className="space-y-2 mb-6 flex-1">
+                  {paidFeatures.map((item) => (
+                    <li key={item} className="flex items-start gap-2 text-xs">
+                      <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={1.5} className="size-3.5 text-primary shrink-0 mt-px" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button size="sm" className="w-full" nativeButton={false} render={<Link href="/register" />}>
+                  Get started
+                </Button>
               </div>
-              <p className="text-xs font-mono text-primary uppercase tracking-widest mb-4 flex items-center gap-1.5">
-                <HugeiconsIcon icon={CrownIcon} strokeWidth={2} className="size-3.5" />
-                Pro
-              </p>
-              <div className="mb-1.5">
-                <span className="text-4xl font-bold">$4.99</span>
-                <span className="text-muted-foreground text-sm ml-1.5">/month</span>
-              </div>
-              <p className="text-sm text-muted-foreground mb-8">For serious infrastructure.</p>
-
-              <ul className="space-y-2.5 mb-10">
-                {proFeatures.map((item) => (
-                  <li key={item} className="flex items-center gap-2.5 text-sm">
-                    <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={1.5} className="size-4 text-primary shrink-0" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <Button className="w-full" nativeButton={false} render={<Link href="/register" />}>
-                Start with Pro
-              </Button>
-            </div>
+            ))}
           </div>
         </div>
       </section>

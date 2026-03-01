@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { updateHost, regenerateToken, regenerateHostPassword, removeHost, getUpdateLog, assignHostToGroup } from "@/lib/actions"
+import { updateHost, regenerateToken, regenerateHostPassword, setHostCredentials, removeHost, getUpdateLog, assignHostToGroup } from "@/lib/actions"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
@@ -13,10 +13,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { CopyTokenButton } from "@/components/copy-token-button"
 import type { Host, HostGroup, UpdateLog } from "@/lib/schema"
+import { canCustomizeCredentials } from "@/lib/plans"
 
 interface Props {
   host: Host | null
   base: string
+  plan: string
   groups: HostGroup[]
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -30,7 +32,8 @@ function timeAgo(date: Date | string) {
   return `${Math.floor(secs / 86400)}d ago`
 }
 
-export function ManageHostSheet({ host, base, groups, open, onOpenChange }: Props) {
+export function ManageHostSheet({ host, base, plan, groups, open, onOpenChange }: Props) {
+  const canCustom = canCustomizeCredentials(plan)
   const router = useRouter()
   const [saveError,     setSaveError]     = useState("")
   const [saveSuccess,   setSaveSuccess]   = useState("")
@@ -42,10 +45,16 @@ export function ManageHostSheet({ host, base, groups, open, onOpenChange }: Prop
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [log,           setLog]           = useState<UpdateLog[]>([])
   const [logLoading,    setLogLoading]    = useState(false)
+  const [customUser,    setCustomUser]    = useState("")
+  const [customPwd,     setCustomPwd]     = useState("")
+  const [customSaving,  setCustomSaving]  = useState(false)
+  const [customError,   setCustomError]   = useState("")
+  const [customSuccess, setCustomSuccess] = useState("")
 
   useEffect(() => {
     if (!open || !host) return
     setSaveError(""); setSaveSuccess(""); setConfirmDelete(false); setNewPassword(null)
+    setCustomUser(""); setCustomPwd(""); setCustomError(""); setCustomSuccess("")
   }, [open, host?.id])
 
   async function fetchLog() {
@@ -84,7 +93,7 @@ export function ManageHostSheet({ host, base, groups, open, onOpenChange }: Prop
     if (!host) return
     setRegenPwd(true)
     const result = await regenerateHostPassword(host.id)
-    setNewPassword(result.password)
+    if ("password" in result) setNewPassword(result.password ?? null)
     setRegenPwd(false)
   }
 
@@ -94,6 +103,16 @@ export function ManageHostSheet({ host, base, groups, open, onOpenChange }: Prop
     await removeHost(host.id)
     onOpenChange(false)
     router.refresh()
+  }
+
+  async function handleSetCustomCredentials(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    if (!host) return
+    setCustomError(""); setCustomSuccess(""); setCustomSaving(true)
+    const result = await setHostCredentials(host.id, customUser, customPwd)
+    if ("error" in result) setCustomError(result.error ?? "Something went wrong")
+    else { setCustomSuccess("Credentials updated"); setCustomUser(""); setCustomPwd(""); router.refresh() }
+    setCustomSaving(false)
   }
 
   if (!host) return null
@@ -173,7 +192,7 @@ export function ManageHostSheet({ host, base, groups, open, onOpenChange }: Prop
                       </label>
                     </div>
                   </Field>
-                  {groups.length > 0 && (
+                  {canCustom && groups.length > 0 && (
                     <Field>
                       <FieldLabel htmlFor="groupId">Group</FieldLabel>
                       <select
@@ -255,6 +274,39 @@ export function ManageHostSheet({ host, base, groups, open, onOpenChange }: Prop
                 <p className="text-xs text-muted-foreground">
                   Use with <code className="font-mono">https://username:password@{base}/api/update</code>
                 </p>
+
+                {/* Custom credentials — Pro+ only */}
+                {canCustom && (
+                  <form onSubmit={handleSetCustomCredentials} className="border border-border p-3 space-y-2.5 mt-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Set custom credentials</p>
+                    <div className="grid grid-cols-[72px_1fr] items-center gap-2">
+                      <label className="text-xs text-muted-foreground">Username</label>
+                      <Input
+                        value={customUser}
+                        onChange={e => setCustomUser(e.target.value)}
+                        placeholder={host.username ?? "my-camera"}
+                        className="h-7 text-xs font-mono"
+                        disabled={customSaving}
+                        autoComplete="off"
+                      />
+                      <label className="text-xs text-muted-foreground">Password</label>
+                      <Input
+                        type="password"
+                        value={customPwd}
+                        onChange={e => setCustomPwd(e.target.value)}
+                        placeholder="min. 6 characters"
+                        className="h-7 text-xs"
+                        disabled={customSaving}
+                        autoComplete="new-password"
+                      />
+                    </div>
+                    {customError   && <p className="text-xs text-destructive">{customError}</p>}
+                    {customSuccess && <p className="text-xs text-green-600 dark:text-green-400">{customSuccess}</p>}
+                    <Button type="submit" size="sm" variant="outline" disabled={customSaving || !customUser || !customPwd}>
+                      {customSaving ? "Saving…" : "Save credentials"}
+                    </Button>
+                  </form>
+                )}
               </div>
 
               <Separator />

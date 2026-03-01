@@ -6,12 +6,12 @@ import { eq, and, count, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { db } from "./db"
-import { hosts, hostGroups, updateLog, clients } from "./schema"
+import { hosts, hostGroups, updateLog, clients, webhooks } from "./schema"
+import { dispatchWebhook } from "./webhooks"
 import { getSession } from "./auth"
+import { getPlanLimit, canCustomizeCredentials } from "./plans"
 import { deleteDnsRecord } from "./dns"
 import { sendPasswordResetEmail, sendFeedbackEmail } from "./email"
-
-const FREE_LIMIT = 3
 
 function token() {
   return randomBytes(32).toString("hex")
@@ -34,9 +34,9 @@ function slugify(s: string) {
 }
 
 async function checkPlanLimit(clientId: number, plan: string) {
-  if (plan === "pro") return null
+  const limit = getPlanLimit(plan)
   const [{ value }] = await db.select({ value: count() }).from(hosts).where(and(eq(hosts.clientId, clientId), eq(hosts.active, true)))
-  if (value >= FREE_LIMIT) return { error: "plan_limit" }
+  if (value >= limit) return { error: "plan_limit" }
   return null
 }
 
@@ -57,12 +57,30 @@ export async function createHost(formData: FormData) {
   const exists = await db.query.hosts.findFirst({ where: eq(hosts.subdomain, subdomain) })
   if (exists) return { error: "Subdomain already taken" }
 
-  const username = genUsername()
-  const password = genPassword()
+  // Pro+ may supply custom credentials; everyone else gets auto-generated ones
+  const customUsername = canCustomizeCredentials(session.plan)
+    ? String(formData.get("username") ?? "").trim() || null
+    : null
+  const customPassword = canCustomizeCredentials(session.plan)
+    ? String(formData.get("password") ?? "").trim() || null
+    : null
 
-  await db.insert(hosts).values({
+  if (customUsername) {
+    const taken = await db.query.hosts.findFirst({ where: eq(hosts.username, customUsername) })
+    if (taken) return { error: "Username already taken" }
+  }
+
+  const username = customUsername ?? genUsername()
+  const password = customPassword ?? genPassword()
+
+  const [inserted] = await db.insert(hosts).values({
     clientId: session.id, subdomain, description, ttl,
     token: token(), username, passwordHash: await hash(password, 10),
+  }).returning()
+
+  const base = process.env.BASE_DOMAIN ?? "novadns.io"
+  dispatchWebhook(session.id, "host.created", {
+    host: { id: inserted.id, subdomain: inserted.subdomain, fqdn: `${inserted.subdomain}.${base}`, ttl: inserted.ttl },
   })
 
   revalidatePath("/dashboard")
@@ -77,21 +95,38 @@ export async function addHost(formData: FormData) {
   const limited = await checkPlanLimit(session.id, session.plan)
   if (limited) return limited
 
-  const subdomain = slugify(String(formData.get("subdomain") ?? ""))
+  const subdomain   = slugify(String(formData.get("subdomain") ?? ""))
   const description = String(formData.get("description") ?? "").trim() || null
-  const ttl = Math.max(30, Math.min(86400, Number(formData.get("ttl")) || 60))
+  const ttl         = Math.max(30, Math.min(86400, Number(formData.get("ttl")) || 60))
 
   if (!subdomain) return { error: "Invalid subdomain" }
 
   const exists = await db.query.hosts.findFirst({ where: eq(hosts.subdomain, subdomain) })
   if (exists) return { error: "Subdomain already taken" }
 
-  const username = genUsername()
-  const password = genPassword()
+  const customUsername = canCustomizeCredentials(session.plan)
+    ? String(formData.get("username") ?? "").trim() || null
+    : null
+  const customPassword = canCustomizeCredentials(session.plan)
+    ? String(formData.get("password") ?? "").trim() || null
+    : null
 
-  await db.insert(hosts).values({
+  if (customUsername) {
+    const taken = await db.query.hosts.findFirst({ where: eq(hosts.username, customUsername) })
+    if (taken) return { error: "Username already taken" }
+  }
+
+  const username = customUsername ?? genUsername()
+  const password = customPassword ?? genPassword()
+
+  const [inserted] = await db.insert(hosts).values({
     clientId: session.id, subdomain, description, ttl,
     token: token(), username, passwordHash: await hash(password, 10),
+  }).returning()
+
+  const base = process.env.BASE_DOMAIN ?? "novadns.io"
+  dispatchWebhook(session.id, "host.created", {
+    host: { id: inserted.id, subdomain: inserted.subdomain, fqdn: `${inserted.subdomain}.${base}`, ttl: inserted.ttl },
   })
 
   revalidatePath("/dashboard")
@@ -113,6 +148,14 @@ export async function updateHost(id: number, formData: FormData) {
   const active = formData.get("active") === "true"
 
   await db.update(hosts).set({ description, ttl, active, updatedAt: new Date() }).where(eq(hosts.id, id))
+
+  if (active !== host.active) {
+    const base = process.env.BASE_DOMAIN ?? "novadns.io"
+    dispatchWebhook(session.id, "host.status_changed", {
+      host: { id: host.id, subdomain: host.subdomain, fqdn: `${host.subdomain}.${base}`, ttl },
+      active,
+    })
+  }
 
   revalidatePath(`/dashboard/hosts/${id}`)
   revalidatePath("/dashboard")
@@ -137,15 +180,50 @@ export async function regenerateHostPassword(id: number) {
   const session = await getSession()
   if (!session) redirect("/login")
 
+  const host = await db.query.hosts.findFirst({ where: and(eq(hosts.id, id), eq(hosts.clientId, session.id)) })
+  if (!host) return { error: "Not found" }
+
   const password = genPassword()
+  const username = host.username ?? genUsername() // generate username if somehow missing
 
   await db
     .update(hosts)
-    .set({ passwordHash: await hash(password, 10), updatedAt: new Date() })
-    .where(and(eq(hosts.id, id), eq(hosts.clientId, session.id)))
+    .set({ username, passwordHash: await hash(password, 10), updatedAt: new Date() })
+    .where(eq(hosts.id, id))
 
   revalidatePath(`/dashboard/hosts/${id}`)
-  return { password }
+  return { username, password }
+}
+
+// ── Set custom credentials (Pro+) ───────────────────────────────────
+export async function setHostCredentials(id: number, username: string, password: string) {
+  const session = await getSession()
+  if (!session) redirect("/login")
+  if (!canCustomizeCredentials(session.plan)) return { error: "plan_limit" }
+
+  username = username.trim()
+  password = password.trim()
+
+  if (!username) return { error: "Username is required" }
+  if (username.length > 32) return { error: "Username too long (max 32 chars)" }
+  if (!/^[a-zA-Z0-9_-]+$/.test(username)) return { error: "Username may only contain letters, numbers, _ and -" }
+  if (password.length < 6) return { error: "Password must be at least 6 characters" }
+
+  const host = await db.query.hosts.findFirst({ where: and(eq(hosts.id, id), eq(hosts.clientId, session.id)) })
+  if (!host) return { error: "Not found" }
+
+  if (username !== host.username) {
+    const taken = await db.query.hosts.findFirst({ where: eq(hosts.username, username) })
+    if (taken) return { error: "Username already taken" }
+  }
+
+  await db
+    .update(hosts)
+    .set({ username, passwordHash: await hash(password, 10), updatedAt: new Date() })
+    .where(eq(hosts.id, id))
+
+  revalidatePath(`/dashboard/hosts/${id}`)
+  return { ok: true }
 }
 
 // ── Delete (redirect variant — used by the detail page) ─────────────
@@ -156,6 +234,13 @@ export async function deleteHost(id: number) {
   const host = await db.query.hosts.findFirst({
     where: and(eq(hosts.id, id), eq(hosts.clientId, session.id)),
   })
+
+  if (host) {
+    const base = process.env.BASE_DOMAIN ?? "novadns.io"
+    dispatchWebhook(session.id, "host.deleted", {
+      host: { id: host.id, subdomain: host.subdomain, fqdn: `${host.subdomain}.${base}`, ttl: host.ttl },
+    })
+  }
 
   await db.delete(hosts).where(and(eq(hosts.id, id), eq(hosts.clientId, session.id)))
 
@@ -174,6 +259,13 @@ export async function removeHost(id: number) {
   const host = await db.query.hosts.findFirst({
     where: and(eq(hosts.id, id), eq(hosts.clientId, session.id)),
   })
+
+  if (host) {
+    const base = process.env.BASE_DOMAIN ?? "novadns.io"
+    dispatchWebhook(session.id, "host.deleted", {
+      host: { id: host.id, subdomain: host.subdomain, fqdn: `${host.subdomain}.${base}`, ttl: host.ttl },
+    })
+  }
 
   await db.delete(hosts).where(and(eq(hosts.id, id), eq(hosts.clientId, session.id)))
 
@@ -225,14 +317,27 @@ export async function getUpdateLog(hostId: number) {
 export async function addGroup(formData: FormData) {
   const session = await getSession()
   if (!session) redirect("/login")
+  if (!canCustomizeCredentials(session.plan)) return { error: "plan_limit" }
 
   const name        = String(formData.get("name") ?? "").trim()
   const description = String(formData.get("description") ?? "").trim() || null
 
   if (!name) return { error: "Name is required" }
 
-  const username = genUsername()
-  const password = genPassword()
+  let username = String(formData.get("username") ?? "").trim()
+  let password = String(formData.get("password") ?? "").trim()
+
+  if (username || password) {
+    if (!username) return { error: "Username is required when setting custom credentials" }
+    if (username.length > 32) return { error: "Username too long (max 32 chars)" }
+    if (!/^[a-zA-Z0-9_-]+$/.test(username)) return { error: "Username may only contain letters, numbers, _ and -" }
+    if (password.length < 6) return { error: "Password must be at least 6 characters" }
+    const taken = await db.query.hostGroups.findFirst({ where: eq(hostGroups.username, username) })
+    if (taken) return { error: "Username already taken" }
+  } else {
+    username = genUsername()
+    password = genPassword()
+  }
 
   await db.insert(hostGroups).values({
     clientId: session.id, name, description,
@@ -276,9 +381,40 @@ export async function removeGroup(id: number) {
   return { ok: true }
 }
 
+export async function setGroupCredentials(id: number, username: string, password: string) {
+  const session = await getSession()
+  if (!session) redirect("/login")
+  if (!canCustomizeCredentials(session.plan)) return { error: "plan_limit" }
+
+  username = username.trim()
+  password = password.trim()
+
+  if (!username) return { error: "Username is required" }
+  if (username.length > 32) return { error: "Username too long (max 32 chars)" }
+  if (!/^[a-zA-Z0-9_-]+$/.test(username)) return { error: "Username may only contain letters, numbers, _ and -" }
+  if (password.length < 6) return { error: "Password must be at least 6 characters" }
+
+  const group = await db.query.hostGroups.findFirst({ where: and(eq(hostGroups.id, id), eq(hostGroups.clientId, session.id)) })
+  if (!group) return { error: "Not found" }
+
+  if (username !== group.username) {
+    const taken = await db.query.hostGroups.findFirst({ where: eq(hostGroups.username, username) })
+    if (taken) return { error: "Username already taken" }
+  }
+
+  await db
+    .update(hostGroups)
+    .set({ username, passwordHash: await hash(password, 10), updatedAt: new Date() })
+    .where(eq(hostGroups.id, id))
+
+  revalidatePath("/dashboard/groups")
+  return { ok: true }
+}
+
 export async function regenerateGroupPassword(id: number) {
   const session = await getSession()
   if (!session) redirect("/login")
+  if (!canCustomizeCredentials(session.plan)) return { error: "plan_limit" }
 
   const password = genPassword()
 
@@ -392,6 +528,87 @@ export async function requestPasswordReset(formData: FormData) {
   await sendPasswordResetEmail(client.email, resetToken)
 
   return { ok: true }
+}
+
+// ── Webhook actions ──────────────────────────────────────────────
+
+export async function getWebhooks() {
+  const session = await getSession()
+  if (!session) redirect("/login")
+
+  return db.query.webhooks.findMany({
+    where: eq(webhooks.clientId, session.id),
+    orderBy: (w, { desc }) => [desc(w.createdAt)],
+  })
+}
+
+export async function addWebhook(formData: FormData) {
+  const session = await getSession()
+  if (!session) redirect("/login")
+
+  const url    = String(formData.get("url") ?? "").trim()
+  const events = formData.getAll("events").join(",")
+
+  if (!url)    return { error: "URL is required" }
+  if (!events) return { error: "Select at least one event" }
+
+  const secret = token()
+
+  await db.insert(webhooks).values({
+    clientId: session.id, url, events, secret,
+  })
+
+  revalidatePath("/dashboard/webhooks")
+  return { ok: true, secret }
+}
+
+export async function updateWebhook(id: number, formData: FormData) {
+  const session = await getSession()
+  if (!session) redirect("/login")
+
+  const webhook = await db.query.webhooks.findFirst({
+    where: and(eq(webhooks.id, id), eq(webhooks.clientId, session.id)),
+  })
+  if (!webhook) return { error: "Not found" }
+
+  const url    = String(formData.get("url") ?? "").trim()
+  const events = formData.getAll("events").join(",")
+  const active = formData.get("active") === "true"
+
+  if (!url)    return { error: "URL is required" }
+  if (!events) return { error: "Select at least one event" }
+
+  await db.update(webhooks)
+    .set({ url, events, active, updatedAt: new Date() })
+    .where(eq(webhooks.id, id))
+
+  revalidatePath("/dashboard/webhooks")
+  return { ok: true }
+}
+
+export async function removeWebhook(id: number) {
+  const session = await getSession()
+  if (!session) redirect("/login")
+
+  await db.delete(webhooks)
+    .where(and(eq(webhooks.id, id), eq(webhooks.clientId, session.id)))
+
+  revalidatePath("/dashboard/webhooks")
+  return { ok: true }
+}
+
+export async function regenerateWebhookSecret(id: number) {
+  const session = await getSession()
+  if (!session) redirect("/login")
+
+  const secret = token()
+
+  await db.update(webhooks)
+    .set({ secret, updatedAt: new Date() })
+    .where(and(eq(webhooks.id, id), eq(webhooks.clientId, session.id)))
+
+  revalidatePath("/dashboard/webhooks")
+  return { secret }
 }
 
 export async function resetPassword(formData: FormData) {

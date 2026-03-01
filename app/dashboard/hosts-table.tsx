@@ -14,8 +14,7 @@ import { PlusSignIcon, Settings01Icon, CrownIcon, SearchIcon, ArrowUp01Icon, Arr
 import { CopyTokenButton } from "@/components/copy-token-button"
 import { ManageHostSheet } from "@/components/manage-host-sheet"
 import type { Host, HostGroup } from "@/lib/schema"
-
-const FREE_LIMIT = 3
+import { getPlanLimit, PLANS, isPaidPlan, canCustomizeCredentials } from "@/lib/plans"
 
 type StatusKind   = "online" | "offline" | "never" | "disabled"
 type StatusFilter = "all" | StatusKind
@@ -117,7 +116,7 @@ export function HostsTable({ hosts: initialHosts, base, plan, groups }: { hosts:
   }, [])
 
   const activeCount = hosts.filter(h => h.active).length
-  const atLimit     = plan === "free" && activeCount >= FREE_LIMIT
+  const atLimit     = activeCount >= getPlanLimit(plan)
 
   function toggleSort(col: SortCol) {
     setSort(s => s.col === col ? { col, dir: s.dir === "asc" ? "desc" : "asc" } : { col, dir: "asc" })
@@ -162,7 +161,7 @@ export function HostsTable({ hosts: initialHosts, base, plan, groups }: { hosts:
       return
     }
     setLoading(false)
-    if ("username" in result && result.username) {
+    if ("username" in result && result.username && result.password) {
       setCreatedCreds({ username: result.username, password: result.password })
     } else {
       setOpen(false)
@@ -385,10 +384,10 @@ export function HostsTable({ hosts: initialHosts, base, plan, groups }: { hosts:
                   <HugeiconsIcon icon={CrownIcon} strokeWidth={1.5} className="size-5 text-primary" />
                 </div>
                 <div className="space-y-1">
-                  <p className="font-semibold">Free plan limit reached</p>
+                  <p className="font-semibold">{PLANS[plan as keyof typeof PLANS]?.label ?? plan} plan limit reached</p>
                   <p className="text-sm text-muted-foreground">
-                    You&apos;ve used all {FREE_LIMIT} active hosts on the free plan.
-                    Upgrade to Pro to continue adding hosts.
+                    You&apos;ve used all {getPlanLimit(plan)} active hosts on your plan.
+                    {!isPaidPlan(plan) && <> <a href="/dashboard/settings" className="underline underline-offset-2">Upgrade</a> to add more.</>}
                   </p>
                 </div>
                 <Button className="w-full" disabled>Upgrade to Pro — coming soon</Button>
@@ -423,6 +422,22 @@ export function HostsTable({ hosts: initialHosts, base, plan, groups }: { hosts:
                     <FieldLabel htmlFor="ttl">TTL (seconds)</FieldLabel>
                     <Input id="ttl" name="ttl" type="number" defaultValue={60} min={30} max={86400} disabled={loading} />
                   </Field>
+                  {canCustomizeCredentials(plan) && (
+                    <>
+                      <Field>
+                        <FieldLabel htmlFor="username">
+                          Username <span className="text-muted-foreground font-normal">(optional — leave blank to auto-generate)</span>
+                        </FieldLabel>
+                        <Input id="username" name="username" placeholder="my-camera" className="font-mono" disabled={loading} autoComplete="off" />
+                      </Field>
+                      <Field>
+                        <FieldLabel htmlFor="password">
+                          Password <span className="text-muted-foreground font-normal">(optional — leave blank to auto-generate)</span>
+                        </FieldLabel>
+                        <Input id="password" name="password" type="password" placeholder="min. 6 characters" disabled={loading} autoComplete="new-password" />
+                      </Field>
+                    </>
+                  )}
                   {error && <p className="text-sm text-destructive">{error}</p>}
                 </FieldGroup>
               </form>
@@ -439,6 +454,7 @@ export function HostsTable({ hosts: initialHosts, base, plan, groups }: { hosts:
       <ManageHostSheet
         host={manageHost}
         base={base}
+        plan={plan}
         groups={groups}
         open={!!manageHost}
         onOpenChange={open => { if (!open) setManageHost(null) }}

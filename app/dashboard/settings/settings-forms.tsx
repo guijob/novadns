@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { CrownIcon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons"
+import { PLANS, PAID_PLANS, isPaidPlan } from "@/lib/plans"
 
 // ─── shared primitives ───────────────────────────────────────────────────────
 
@@ -28,51 +30,108 @@ function Feedback({ error, success }: { error: string; success: string }) {
 
 // ─── Plan ────────────────────────────────────────────────────────────────────
 
-const FREE_PERKS = ["3 active hosts", "IPv4 + IPv6", "Token auth", "Update logs", "DynDNS / NoIP compatible"]
-const PRO_PERKS  = ["Unlimited hosts", "IPv4 + IPv6", "Token auth", "Update logs", "DynDNS / NoIP compatible", "IPv6 subnet support", "Custom TTL", "Priority support"]
+export function PlanSection({ plan }: { plan: string; email: string }) {
+  const [loading, setLoading] = useState<string | null>(null)
+  const searchParams = useSearchParams()
+  const upgraded = searchParams.get("upgraded") === "1"
 
-export function PlanSection({ plan, email }: { plan: string; email: string }) {
-  const isPro   = plan === "pro"
-  const perks   = isPro ? PRO_PERKS : FREE_PERKS
+  async function handleSubscribe(targetPlan: string) {
+    setLoading(targetPlan)
+    const res  = await fetch("/api/billing/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan: targetPlan }),
+    })
+    const data = await res.json()
+    if (data.url) window.location.href = data.url
+    else setLoading(null)
+  }
+
+  async function handlePortal() {
+    setLoading("portal")
+    const res  = await fetch("/api/billing/portal", { method: "POST" })
+    const data = await res.json()
+    if (data.url) window.location.href = data.url
+    else setLoading(null)
+  }
+
+  const currentPlan = PLANS[plan as keyof typeof PLANS] ?? PLANS.free
 
   return (
     <Section label="Plan">
-      {/* Current plan header */}
+      {upgraded && (
+        <div className="px-4 py-2.5 bg-green-50 dark:bg-green-950 border-b border-green-200 dark:border-green-800">
+          <p className="text-xs text-green-700 dark:text-green-300 font-medium">Plan upgraded successfully. Welcome!</p>
+        </div>
+      )}
+
+      {/* Current plan */}
       <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
-          {isPro && <HugeiconsIcon icon={CrownIcon} strokeWidth={1.5} className="size-4 text-primary" />}
-          <span className="font-medium text-sm">{isPro ? "Pro" : "Free"} plan</span>
+          {isPaidPlan(plan) && <HugeiconsIcon icon={CrownIcon} strokeWidth={1.5} className="size-4 text-primary" />}
+          <span className="font-medium text-sm">{currentPlan.label} plan</span>
+          <span className="text-xs font-mono text-muted-foreground">— {currentPlan.limit} hosts</span>
         </div>
-        <span className="text-xs font-mono text-muted-foreground">{isPro ? "$4.99 / month" : "$0 / month"}</span>
+        <span className="text-xs font-mono text-muted-foreground">
+          {currentPlan.monthlyPrice === 0 ? "$0 / month" : `$${currentPlan.monthlyPrice} / month`}
+        </span>
       </div>
 
-      {/* Included features */}
-      <div className="px-4 py-3 border-b border-border">
-        <p className="text-xs text-muted-foreground mb-2.5">Included</p>
-        <ul className="space-y-1.5">
-          {perks.map(p => (
-            <li key={p} className="flex items-center gap-2 text-xs">
-              <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={1.5} className="size-3.5 text-primary shrink-0" />
-              {p}
-            </li>
-          ))}
-        </ul>
+      {/* Tier table */}
+      <div className="divide-y divide-border">
+        {PAID_PLANS.map(key => {
+          const tier       = PLANS[key]
+          const isCurrent  = plan === key
+          const anyLoading = loading !== null
+
+          return (
+            <div
+              key={key}
+              className={`flex items-center justify-between gap-4 px-4 py-3 ${isCurrent ? "bg-primary/5" : ""}`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-20 shrink-0">
+                  <span className={`text-sm font-medium ${isCurrent ? "text-primary" : ""}`}>{tier.label}</span>
+                </div>
+                <span className="text-xs text-muted-foreground font-mono">{tier.limit} hosts</span>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="text-xs font-mono text-muted-foreground">${tier.monthlyPrice}/mo</span>
+                {isCurrent ? (
+                  <span className="text-xs font-medium text-primary flex items-center gap-1">
+                    <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-3.5" />
+                    Current
+                  </span>
+                ) : isPaidPlan(plan) ? (
+                  <span className="text-xs text-muted-foreground">via portal</span>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    disabled={anyLoading}
+                    onClick={() => handleSubscribe(key)}
+                  >
+                    {loading === key ? "Redirecting…" : "Subscribe"}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )
+        })}
       </div>
 
-      {/* Action */}
-      <div className="px-4 py-3">
-        {isPro ? (
-          <p className="text-xs text-muted-foreground">
-            You&apos;re on Pro. Thank you for your support.
-          </p>
-        ) : (
+      {/* Footer action */}
+      <div className="px-4 py-3 border-t border-border bg-muted/20">
+        {isPaidPlan(plan) ? (
           <div className="flex items-center justify-between gap-4">
-            <p className="text-xs text-muted-foreground">Upgrade for unlimited hosts and IPv6 subnet support.</p>
-            <Button size="sm" disabled>
-              <HugeiconsIcon icon={CrownIcon} strokeWidth={2} />
-              Upgrade — soon
+            <p className="text-xs text-muted-foreground">Upgrade, downgrade, or cancel via the billing portal.</p>
+            <Button size="sm" variant="outline" onClick={handlePortal} disabled={loading !== null}>
+              {loading === "portal" ? "Redirecting…" : "Manage subscription"}
             </Button>
           </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">Subscribe to a paid plan to increase your host limit.</p>
         )}
       </div>
     </Section>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { updateGroup, removeGroup, regenerateGroupPassword, assignHostToGroup, getGroupHosts, getHosts } from "@/lib/actions"
+import { updateGroup, removeGroup, regenerateGroupPassword, setGroupCredentials, assignHostToGroup, getGroupHosts, getHosts } from "@/lib/actions"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -16,12 +16,14 @@ import type { HostGroup, Host } from "@/lib/schema"
 interface Props {
   group: HostGroup | null
   base: string
+  plan: string
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-export function ManageGroupSheet({ group, base, open, onOpenChange }: Props) {
+export function ManageGroupSheet({ group, base, plan, open, onOpenChange }: Props) {
   const router = useRouter()
+  const canCustomize = plan === "pro" || plan === "business" || plan === "enterprise"
   const [saveError,     setSaveError]     = useState("")
   const [saveSuccess,   setSaveSuccess]   = useState("")
   const [saving,        setSaving]        = useState(false)
@@ -34,10 +36,16 @@ export function ManageGroupSheet({ group, base, open, onOpenChange }: Props) {
   const [membersTab,    setMembersTab]    = useState(false)
   const [removing,      setRemoving]      = useState<number | null>(null)
   const [adding,        setAdding]        = useState<number | null>(null)
+  const [customUser,    setCustomUser]    = useState("")
+  const [customPwd,     setCustomPwd]     = useState("")
+  const [customSaving,  setCustomSaving]  = useState(false)
+  const [customError,   setCustomError]   = useState("")
+  const [customSuccess, setCustomSuccess] = useState("")
 
   useEffect(() => {
     if (!open || !group) return
     setSaveError(""); setSaveSuccess(""); setConfirmDelete(false); setNewPassword(null)
+    setCustomUser(""); setCustomPwd(""); setCustomError(""); setCustomSuccess("")
     setMembersTab(false)
   }, [open, group?.id])
 
@@ -62,8 +70,23 @@ export function ManageGroupSheet({ group, base, open, onOpenChange }: Props) {
     if (!group) return
     setRegenPwd(true)
     const result = await regenerateGroupPassword(group.id)
-    setNewPassword(result.password)
+    if ("password" in result) setNewPassword(result.password ?? null)
     setRegenPwd(false)
+  }
+
+  async function handleSetCustomCredentials(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    if (!group) return
+    setCustomError(""); setCustomSuccess(""); setCustomSaving(true)
+    const result = await setGroupCredentials(group.id, customUser, customPwd)
+    if (result && "error" in result) {
+      setCustomError(result.error ?? "Something went wrong")
+    } else {
+      setCustomSuccess("Credentials updated")
+      setCustomPwd("")
+      router.refresh()
+    }
+    setCustomSaving(false)
   }
 
   async function handleDelete() {
@@ -195,6 +218,45 @@ export function ManageGroupSheet({ group, base, open, onOpenChange }: Props) {
                   Example: <code className="font-mono">https://username:password@{base}/api/update?hostname=home.{base}</code>
                 </p>
               </div>
+
+              {canCustomize && (
+                <>
+                  <Separator />
+                  <div className="space-y-2.5">
+                    <p className="text-sm font-medium">Set custom credentials</p>
+                    <form onSubmit={handleSetCustomCredentials} autoComplete="off" className="space-y-3">
+                      <Field>
+                        <FieldLabel htmlFor="custom-group-user">Username</FieldLabel>
+                        <Input
+                          id="custom-group-user"
+                          value={customUser}
+                          onChange={e => setCustomUser(e.target.value)}
+                          placeholder={group.username ?? "username"}
+                          disabled={customSaving}
+                          autoComplete="off"
+                        />
+                      </Field>
+                      <Field>
+                        <FieldLabel htmlFor="custom-group-pwd">New password</FieldLabel>
+                        <Input
+                          id="custom-group-pwd"
+                          type="password"
+                          value={customPwd}
+                          onChange={e => setCustomPwd(e.target.value)}
+                          placeholder="Min. 6 characters"
+                          disabled={customSaving}
+                          autoComplete="new-password"
+                        />
+                      </Field>
+                      {customError   && <p className="text-xs text-destructive">{customError}</p>}
+                      {customSuccess && <p className="text-xs text-green-600 dark:text-green-400">{customSuccess}</p>}
+                      <Button type="submit" size="sm" disabled={customSaving}>
+                        {customSaving ? "Saving…" : "Set credentials"}
+                      </Button>
+                    </form>
+                  </div>
+                </>
+              )}
 
               <Separator />
 

@@ -41,7 +41,7 @@ function SortableHead({ col, label, sort, onSort }: { col: SortCol; label: strin
   )
 }
 
-export function GroupsTable({ groups: initialGroups, base }: { groups: GroupWithCount[]; base: string }) {
+export function GroupsTable({ groups: initialGroups, base, plan }: { groups: GroupWithCount[]; base: string; plan: string }) {
   const router = useRouter()
   const [groups,       setGroups]       = useState(initialGroups)
   const [query,        setQuery]        = useState("")
@@ -91,13 +91,14 @@ export function GroupsTable({ groups: initialGroups, base }: { groups: GroupWith
       setCreatedCreds({ username: result.username, password: result.password })
     } else {
       setOpen(false)
+      router.refresh()
     }
-    router.refresh()
   }
 
   function handleCredsClose() {
     setCreatedCreds(null)
     setOpen(false)
+    router.refresh()
   }
 
   return (
@@ -251,6 +252,22 @@ export function GroupsTable({ groups: initialGroups, base }: { groups: GroupWith
                     </FieldLabel>
                     <Textarea id="description" name="description" placeholder="All home routers…" rows={2} disabled={loading} />
                   </Field>
+                  {(plan === "pro" || plan === "business" || plan === "enterprise") && (
+                    <>
+                      <Field>
+                        <FieldLabel htmlFor="username">
+                          Username <span className="text-muted-foreground font-normal">(optional)</span>
+                        </FieldLabel>
+                        <Input id="username" name="username" placeholder="Leave blank to auto-generate" disabled={loading} autoComplete="off" />
+                      </Field>
+                      <Field>
+                        <FieldLabel htmlFor="password">
+                          Password <span className="text-muted-foreground font-normal">(optional)</span>
+                        </FieldLabel>
+                        <Input id="password" name="password" type="password" placeholder="Leave blank to auto-generate" disabled={loading} autoComplete="new-password" />
+                      </Field>
+                    </>
+                  )}
                   {error && <p className="text-sm text-destructive">{error}</p>}
                 </FieldGroup>
               </form>
@@ -267,6 +284,7 @@ export function GroupsTable({ groups: initialGroups, base }: { groups: GroupWith
       <ManageGroupSheet
         group={manageGroup}
         base={base}
+        plan={plan}
         open={!!manageGroup}
         onOpenChange={o => { if (!o) setManageGroup(null) }}
       />

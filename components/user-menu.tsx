@@ -26,13 +26,15 @@ import {
   Sun01Icon,
   MoonIcon,
   ComputerIcon,
+  CrownIcon,
 } from "@hugeicons/core-free-icons"
 
 interface UserMenuProps {
   email: string
+  plan: string
 }
 
-export function UserMenu({ email }: UserMenuProps) {
+export function UserMenu({ email, plan }: UserMenuProps) {
   const router = useRouter()
   const { theme, setTheme } = useTheme()
 
@@ -52,6 +54,12 @@ export function UserMenu({ email }: UserMenuProps) {
           <div className="flex flex-col gap-0.5">
             <span className="text-xs text-muted-foreground">Signed in as</span>
             <span className="truncate font-medium">{email}</span>
+            {plan === "pro" && (
+              <span className="inline-flex items-center gap-1 text-xs text-primary font-medium mt-0.5">
+                <HugeiconsIcon icon={CrownIcon} strokeWidth={2} className="size-3" />
+                Pro plan
+              </span>
+            )}
           </div>
         </DropdownMenuLabel>
 
