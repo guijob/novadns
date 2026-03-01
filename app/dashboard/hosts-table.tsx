@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFo
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { PlusSignIcon, Settings01Icon, CrownIcon, SearchIcon, ArrowUp01Icon, ArrowDown01Icon, ArrowUpDownIcon, CheckmarkCircle01Icon } from "@hugeicons/core-free-icons"
+import { PlusSignIcon, Settings01Icon, CrownIcon, SearchIcon, ArrowUp01Icon, ArrowDown01Icon, ArrowUpDownIcon, CheckmarkCircle01Icon, Copy01Icon } from "@hugeicons/core-free-icons"
 import { CopyTokenButton } from "@/components/copy-token-button"
 import { ManageHostSheet } from "@/components/manage-host-sheet"
 import type { Host, HostGroup } from "@/lib/schema"
@@ -95,6 +95,7 @@ export function HostsTable({ hosts: initialHosts, base, plan, groups }: { hosts:
   const [loading,      setLoading]      = useState(false)
   const [createdCreds, setCreatedCreds] = useState<{ username: string; password: string } | null>(null)
   const [manageHost,   setManageHost]   = useState<Host | null>(null)
+  const [copiedId,     setCopiedId]     = useState<number | null>(null)
 
   // Sync when server re-fetches (after add/delete)
   useEffect(() => { setHosts(initialHosts) }, [initialHosts])
@@ -271,7 +272,23 @@ export function HostsTable({ hosts: initialHosts, base, plan, groups }: { hosts:
                 return (
                   <TableRow key={host.id} className="group">
                     <TableCell>
-                      <span className="font-medium text-sm">{host.subdomain}.{base}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium text-sm">{host.subdomain}.{base}</span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${host.subdomain}.${base}`)
+                            setCopiedId(host.id)
+                            setTimeout(() => setCopiedId(null), 2000)
+                          }}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                        >
+                          <HugeiconsIcon
+                            icon={Copy01Icon}
+                            strokeWidth={1.5}
+                            className={`size-3.5 ${copiedId === host.id ? "text-green-500" : ""}`}
+                          />
+                        </button>
+                      </div>
                       {host.description && (
                         <p className="text-xs text-muted-foreground mt-0.5">{host.description}</p>
                       )}

@@ -6,8 +6,10 @@ import { eq, and, count, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { db } from "./db"
-import { hosts, hostGroups, updateLog } from "./schema"
+import { hosts, hostGroups, updateLog, clients } from "./schema"
 import { getSession } from "./auth"
+import { deleteDnsRecord } from "./dns"
+import { sendPasswordResetEmail, sendFeedbackEmail } from "./email"
 
 const FREE_LIMIT = 3
 
@@ -151,7 +153,14 @@ export async function deleteHost(id: number) {
   const session = await getSession()
   if (!session) redirect("/login")
 
+  const host = await db.query.hosts.findFirst({
+    where: and(eq(hosts.id, id), eq(hosts.clientId, session.id)),
+  })
+
   await db.delete(hosts).where(and(eq(hosts.id, id), eq(hosts.clientId, session.id)))
+
+  if (host?.ipv4) await deleteDnsRecord(host.subdomain, "A",    host.ipv4, host.ttl)
+  if (host?.ipv6) await deleteDnsRecord(host.subdomain, "AAAA", host.ipv6, host.ttl)
 
   revalidatePath("/dashboard")
   redirect("/dashboard")
@@ -162,7 +171,14 @@ export async function removeHost(id: number) {
   const session = await getSession()
   if (!session) redirect("/login")
 
+  const host = await db.query.hosts.findFirst({
+    where: and(eq(hosts.id, id), eq(hosts.clientId, session.id)),
+  })
+
   await db.delete(hosts).where(and(eq(hosts.id, id), eq(hosts.clientId, session.id)))
+
+  if (host?.ipv4) await deleteDnsRecord(host.subdomain, "A",    host.ipv4, host.ttl)
+  if (host?.ipv6) await deleteDnsRecord(host.subdomain, "AAAA", host.ipv6, host.ttl)
 
   revalidatePath("/dashboard")
   return { ok: true }
@@ -334,5 +350,72 @@ export async function assignHostToGroup(hostId: number, groupId: number | null) 
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/groups")
+  return { ok: true }
+}
+
+// ── Feedback ─────────────────────────────────────────────────────
+
+export async function submitFeedback(formData: FormData) {
+  const session = await getSession()
+  if (!session) return { error: "Not authenticated" }
+
+  const message = String(formData.get("message") ?? "").trim()
+  if (!message) return { error: "Message is required" }
+  if (message.length > 2000) return { error: "Message too long" }
+
+  try {
+    await sendFeedbackEmail(session.email, message)
+    return { ok: true }
+  } catch {
+    return { error: "Failed to send feedback. Please try again." }
+  }
+}
+
+// ── Password reset ───────────────────────────────────────────────
+
+export async function requestPasswordReset(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase()
+  if (!email) return { error: "Email is required" }
+
+  const client = await db.query.clients.findFirst({ where: eq(clients.email, email) })
+
+  // Always return success — don't leak whether the email exists
+  if (!client) return { ok: true }
+
+  const resetToken      = randomBytes(32).toString("hex")
+  const resetTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+
+  await db.update(clients)
+    .set({ resetToken, resetTokenExpiresAt, updatedAt: new Date() })
+    .where(eq(clients.id, client.id))
+
+  await sendPasswordResetEmail(client.email, resetToken)
+
+  return { ok: true }
+}
+
+export async function resetPassword(formData: FormData) {
+  const token    = String(formData.get("token")    ?? "").trim()
+  const password = String(formData.get("password") ?? "")
+
+  if (!token || !password) return { error: "Invalid request" }
+  if (password.length < 8)  return { error: "Password must be at least 8 characters" }
+
+  const client = await db.query.clients.findFirst({
+    where: eq(clients.resetToken, token),
+  })
+
+  if (!client?.resetTokenExpiresAt) return { error: "Invalid or expired link" }
+  if (client.resetTokenExpiresAt < new Date()) return { error: "This link has expired — please request a new one" }
+
+  await db.update(clients)
+    .set({
+      passwordHash:        await hash(password, 10),
+      resetToken:          null,
+      resetTokenExpiresAt: null,
+      updatedAt:           new Date(),
+    })
+    .where(eq(clients.id, client.id))
+
   return { ok: true }
 }

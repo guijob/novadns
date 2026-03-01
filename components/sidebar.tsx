@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import { UserMenu } from "@/components/user-menu"
+import { FeedbackButton } from "@/components/feedback-button"
 
 const navItems = [
   { href: "/dashboard",        label: "Hosts",  icon: ListViewIcon,      exact: true  },
@@ -82,7 +83,11 @@ export function DashboardShell({ email, plan, activeCount, sidebarOpen = true, c
         <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="h-4" />
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-3">
+            <FeedbackButton />
+            <Link href="/docs" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              Docs
+            </Link>
             <UserMenu email={email} />
           </div>
         </header>

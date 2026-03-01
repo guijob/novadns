@@ -165,6 +165,23 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
 
+      {/* ── ANNOUNCEMENT STRIP ──────────────────────────────────────── */}
+      <div className="relative bg-primary text-primary-foreground text-xs flex items-center justify-center gap-3 px-4 py-2.5 text-center">
+        <span className="font-mono uppercase tracking-widest opacity-70 hidden sm:inline">New</span>
+        <span className="hidden sm:block w-px h-3 bg-primary-foreground/30" />
+        <span>
+          IPv6 subnet support is live — one hostname for your entire{" "}
+          <span className="font-mono">/48</span> or{" "}
+          <span className="font-mono">/64</span> prefix.
+        </span>
+        <a
+          href="#features"
+          className="shrink-0 flex items-center gap-1 underline underline-offset-2 opacity-80 hover:opacity-100 transition-opacity font-medium"
+        >
+          Learn more
+        </a>
+      </div>
+
       {/* ── NAV ─────────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
@@ -214,8 +231,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-8 max-w-[420px]">
-              Drop-in replacement for DynDNS and NoIP. Native dual-stack. Per-user
-              token auth. Works with any router, NAS, or HTTP client.
+              The simplest way to keep your services reachable — with token security and IPv6 subnet support built in.
             </p>
 
             <div className="flex flex-wrap gap-3">
@@ -223,7 +239,7 @@ export default function LandingPage() {
                 Get Started Free
                 <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1 size-4" />
               </Button>
-              <Button size="lg" variant="outline" nativeButton={false} render={<a href="#docs" />}>
+              <Button size="lg" variant="outline" nativeButton={false} render={<Link href="/docs" />}>
                 View Docs
               </Button>
             </div>
@@ -642,7 +658,7 @@ export default function LandingPage() {
               <div className="flex flex-col gap-2">
                 <a href="#features" className="hover:text-foreground transition-colors">Features</a>
                 <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
-                <a href="#docs" className="hover:text-foreground transition-colors">Docs</a>
+                <Link href="/docs" className="hover:text-foreground transition-colors">Docs</Link>
               </div>
             </div>
             <div className="space-y-2.5">

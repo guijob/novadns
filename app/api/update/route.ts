@@ -3,7 +3,8 @@ import { compare } from "bcryptjs"
 import { eq, and } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { hosts, hostGroups, updateLog } from "@/lib/schema"
-import { redis, hostUpdateKey } from "@/lib/redis"
+import { redis, hostUpdateKey, rateLimit } from "@/lib/redis"
+import { upsertDnsRecord } from "@/lib/dns"
 
 // DynDNS-compatible response codes
 const res = (body: string, status = 200) =>
@@ -32,6 +33,11 @@ export async function GET(req: NextRequest) {
   const hostnameParam = searchParams.get("hostname") // used with Basic Auth
   const ipParam  = searchParams.get("ip")   // optional — falls back to caller IP
   const ip6Param = searchParams.get("ip6")  // optional explicit IPv6
+
+  // IP rate limit first — before any expensive auth (bcrypt/DB) operations
+  const caller = callerIp(req)
+  const ipAllowed = await rateLimit(`rl:ip:${caller}`, 30, 60)
+  if (!ipAllowed) return res("abuse", 429)
 
   let host: Awaited<ReturnType<typeof db.query.hosts.findFirst>>
 
@@ -87,7 +93,9 @@ export async function GET(req: NextRequest) {
 
   if (!host || !host.active) return res("badauth", 401)
 
-  const caller = callerIp(req)
+  // Per-host rate limit after auth (we need the host ID)
+  const hostAllowed = await rateLimit(`rl:host:${host.id}`, 10, 60)
+  if (!hostAllowed) return res("abuse", 429)
 
   // Resolve IPs to store
   const newIpv4 = ipParam
@@ -100,6 +108,18 @@ export async function GET(req: NextRequest) {
 
   const now = new Date()
   const ipChanged = newIpv4 !== host.ipv4 || newIpv6 !== host.ipv6
+
+  // Update DNS records when IP changes (parallel with DB write)
+  if (ipChanged) {
+    await Promise.all([
+      newIpv4 !== host.ipv4 && newIpv4
+        ? upsertDnsRecord(host.subdomain, "A",    newIpv4, host.ttl)
+        : Promise.resolve(),
+      newIpv6 !== host.ipv6 && newIpv6
+        ? upsertDnsRecord(host.subdomain, "AAAA", newIpv6, host.ttl)
+        : Promise.resolve(),
+    ])
+  }
 
   // Always update lastSeen so the "Online" status stays current
   await db

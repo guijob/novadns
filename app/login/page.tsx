@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -26,9 +26,11 @@ const perks = [
   { icon: Audit01Icon, text: "Full update log with timestamps & caller IPs" },
 ]
 
-export default function LoginPage() {
-  const router = useRouter()
-  const [error, setError] = useState("")
+function LoginForm() {
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const wasReset     = searchParams.get("reset") === "1"
+  const [error,   setError]   = useState("")
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -52,6 +54,41 @@ export default function LoginPage() {
     }
   }
 
+  return (
+    <form onSubmit={handleSubmit}>
+      <FieldGroup>
+        <Field>
+          <FieldLabel htmlFor="email">Email</FieldLabel>
+          <Input id="email" name="email" type="email" placeholder="you@example.com" required autoFocus />
+        </Field>
+        <Field>
+          <div className="flex items-center justify-between">
+            <FieldLabel htmlFor="password">Password</FieldLabel>
+            <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              Forgot password?
+            </Link>
+          </div>
+          <Input id="password" name="password" type="password" placeholder="••••••••" required />
+        </Field>
+        {wasReset && (
+          <p className="text-sm text-green-600 dark:text-green-400">Password updated — sign in with your new password.</p>
+        )}
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Signing in…" : "Sign in"}
+        </Button>
+        <p className="text-center text-xs text-muted-foreground sm:hidden">
+          No account?{" "}
+          <Link href="/register" className="text-foreground underline underline-offset-4 hover:text-primary transition-colors">
+            Sign up free
+          </Link>
+        </p>
+      </FieldGroup>
+    </form>
+  )
+}
+
+export default function LoginPage() {
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
 
@@ -128,34 +165,9 @@ export default function LoginPage() {
                 Sign in to manage your dynamic DNS hosts.
               </p>
             </div>
-
-            <form onSubmit={handleSubmit}>
-              <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="email">Email</FieldLabel>
-                  <Input id="email" name="email" type="email" placeholder="you@example.com" required autoFocus />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <Input id="password" name="password" type="password" placeholder="••••••••" required />
-                </Field>
-
-                {error && (
-                  <p className="text-sm text-destructive">{error}</p>
-                )}
-
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Signing in…" : "Sign in"}
-                </Button>
-
-                <p className="text-center text-xs text-muted-foreground sm:hidden">
-                  No account?{" "}
-                  <Link href="/register" className="text-foreground underline underline-offset-4 hover:text-primary transition-colors">
-                    Sign up free
-                  </Link>
-                </p>
-              </FieldGroup>
-            </form>
+            <Suspense>
+              <LoginForm />
+            </Suspense>
           </div>
         </div>
       </div>
