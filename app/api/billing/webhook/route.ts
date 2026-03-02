@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
     const clientId   = (sub.customData as Record<string, string> | null)?.clientId
 
     const plan = priceId ? getPlanByPriceId(priceId) : null
+    console.log("[webhook] subscription.created priceId:", priceId, "clientId:", clientId, "plan:", plan)
     if (plan && clientId) {
       await db.update(clients)
         .set({ plan, paddleCustomerId: customerId, paddleSubscriptionId: subId, updatedAt: new Date() })
@@ -89,6 +90,37 @@ export async function POST(req: NextRequest) {
         const { label, limit } = PLANS[newPlan as PlanKey]
         sendSubscriptionUpgradedEmail(client.email, client.name, label, limit).catch(() => {})
       }
+    }
+  }
+
+  // ── Transaction payment failed → revert to plan Paddle has on file ──
+  if (event.eventType === EventName.TransactionPaymentFailed) {
+    const tx         = event.data
+    const customerId = tx.customerId
+    if (!customerId) return NextResponse.json({ received: true })
+
+    // Re-fetch the subscription from Paddle to get the current (reverted) price
+    const subscriptionId = tx.subscriptionId
+    if (!subscriptionId) return NextResponse.json({ received: true })
+
+    try {
+      const sub     = await paddle.subscriptions.get(subscriptionId)
+      const priceId = sub.items[0]?.price?.id
+      const plan    = priceId ? getPlanByPriceId(priceId) : null
+      if (!plan) return NextResponse.json({ received: true })
+
+      const client = await db.query.clients.findFirst({
+        where: eq(clients.paddleCustomerId, customerId),
+      })
+      if (client && client.plan !== plan) {
+        const disabled = await hardDowngrade(client.id, plan)
+        await db.update(clients)
+          .set({ plan, updatedAt: new Date() })
+          .where(eq(clients.id, client.id))
+        sendSubscriptionCanceledEmail(client.email, client.name, disabled).catch(() => {})
+      }
+    } catch (err) {
+      console.error("[webhook] TransactionPaymentFailed error:", err)
     }
   }
 

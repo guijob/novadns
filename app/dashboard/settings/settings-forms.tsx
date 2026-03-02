@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useState, useEffect, useRef } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { initializePaddle, type Paddle } from "@paddle/paddle-js"
 import { Button } from "@/components/ui/button"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
@@ -10,6 +10,16 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { CrownIcon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons"
 import { PLANS, PAID_PLANS, isPaidPlan, type PlanKey } from "@/lib/plans"
 import { unlinkGoogle, unlinkMicrosoft } from "@/lib/actions"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 // ─── shared primitives ───────────────────────────────────────────────────────
 
@@ -38,10 +48,53 @@ export function PlanSection({ plan, email, clientId, priceIds }: {
   clientId: number
   priceIds: Partial<Record<PlanKey, string>>
 }) {
-  const [loading, setLoading] = useState<string | null>(null)
-  const [paddle,  setPaddle]  = useState<Paddle | undefined>()
+  const [loading,     setLoading]     = useState<string | null>(null)
+  const [paddle,      setPaddle]      = useState<Paddle | undefined>()
+  const [pendingPlan, setPendingPlan] = useState<PlanKey | null>(null)
+  const [planSuccess, setPlanSuccess] = useState(false)
+  const [planError,   setPlanError]   = useState("")
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const router  = useRouter()
   const searchParams = useSearchParams()
   const upgraded = searchParams.get("upgraded") === "1"
+
+  // Initial checkout: webhook updates the DB async — refresh after 1.5s to pick it up
+  useEffect(() => {
+    if (!upgraded) return
+    const t = setTimeout(() => window.location.replace("/dashboard/settings"), 1500)
+    return () => clearTimeout(t)
+  }, [upgraded])
+
+  function stopPolling() {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
+  }
+
+  function pollForPlanChange(expectedPlan: PlanKey) {
+    let attempts = 0
+    pollRef.current = setInterval(async () => {
+      attempts++
+      try {
+        const res  = await fetch("/api/billing/plan")
+        const data = await res.json()
+        if (data.plan === expectedPlan) {
+          stopPolling()
+          setLoading(null)
+          setPlanSuccess(true)
+          router.refresh()
+        } else if (attempts >= 10) {
+          stopPolling()
+          setLoading(null)
+          setPlanError("Plan update is taking longer than expected. Please refresh the page.")
+        }
+      } catch {
+        stopPolling()
+        setLoading(null)
+        setPlanError("Could not verify plan update. Please refresh the page.")
+      }
+    }, 500)
+  }
+
+  useEffect(() => { return () => stopPolling() }, [])
 
   useEffect(() => {
     initializePaddle({
@@ -85,13 +138,43 @@ export function PlanSection({ plan, email, clientId, priceIds }: {
     }
   }
 
+  async function handleChangePlan(targetPlan: PlanKey) {
+    setPlanSuccess(false)
+    setPlanError("")
+    setLoading(targetPlan)
+    try {
+      const res  = await fetch("/api/billing/change-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: targetPlan }),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        pollForPlanChange(targetPlan)
+      } else {
+        setPlanError(data.error ?? "Failed to update plan. Please try again.")
+        setLoading(null)
+      }
+    } catch {
+      setPlanError("Failed to update plan. Please try again.")
+      setLoading(null)
+    }
+  }
+
   const currentPlan = PLANS[plan as keyof typeof PLANS] ?? PLANS.free
 
   return (
     <Section label="Plan">
-      {upgraded && (
+      {(upgraded || planSuccess) && (
         <div className="px-4 py-2.5 bg-green-50 dark:bg-green-950 border-b border-green-200 dark:border-green-800">
-          <p className="text-xs text-green-700 dark:text-green-300 font-medium">Plan upgraded successfully. Welcome!</p>
+          <p className="text-xs text-green-700 dark:text-green-300 font-medium">
+            {planSuccess ? "Plan updated successfully." : "Plan upgraded successfully. Welcome!"}
+          </p>
+        </div>
+      )}
+      {planError && (
+        <div className="px-4 py-2.5 border-b border-destructive/30 bg-destructive/5">
+          <p className="text-xs text-destructive">{planError}</p>
         </div>
       )}
 
@@ -133,7 +216,15 @@ export function PlanSection({ plan, email, clientId, priceIds }: {
                     Current
                   </span>
                 ) : isPaidPlan(plan) ? (
-                  <span className="text-xs text-muted-foreground">via portal</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    disabled={anyLoading}
+                    onClick={() => setPendingPlan(key)}
+                  >
+                    {loading === key ? "Updating…" : tier.limit > PLANS[plan as PlanKey].limit ? "Upgrade" : "Downgrade"}
+                  </Button>
                 ) : (
                   <Button
                     size="sm"
@@ -155,7 +246,7 @@ export function PlanSection({ plan, email, clientId, priceIds }: {
       <div className="px-4 py-3 border-t border-border bg-muted/20">
         {isPaidPlan(plan) ? (
           <div className="flex items-center justify-between gap-4">
-            <p className="text-xs text-muted-foreground">Upgrade, downgrade, or cancel via the billing portal.</p>
+            <p className="text-xs text-muted-foreground">Cancel or update payment method via the billing portal.</p>
             <Button size="sm" variant="outline" onClick={handlePortal} disabled={loading !== null}>
               {loading === "portal" ? "Redirecting…" : "Manage subscription"}
             </Button>
@@ -164,6 +255,44 @@ export function PlanSection({ plan, email, clientId, priceIds }: {
           <p className="text-xs text-muted-foreground">Subscribe to a paid plan to increase your host limit.</p>
         )}
       </div>
+
+      {/* Plan change confirmation dialog */}
+      <AlertDialog open={pendingPlan !== null} onOpenChange={open => { if (!open) setPendingPlan(null) }}>
+        {pendingPlan && (() => {
+          const target    = PLANS[pendingPlan]
+          const current   = PLANS[plan as PlanKey] ?? PLANS.free
+          const isUpgrade = target.limit > current.limit
+          return (
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {isUpgrade ? "Upgrade" : "Downgrade"} to {target.label}?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  You&apos;ll be switched from <strong>{current.label}</strong> (${current.monthlyPrice}/mo)
+                  to <strong>{target.label}</strong> (${target.monthlyPrice}/mo).
+                  The difference will be prorated and charged or credited to your payment method immediately.
+                  {!isUpgrade && target.limit < current.limit && (
+                    <> Hosts beyond the {target.limit}-host limit will be disabled.</>
+                  )}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={loading !== null}
+                  onClick={() => {
+                    handleChangePlan(pendingPlan)
+                    setPendingPlan(null)
+                  }}
+                >
+                  {isUpgrade ? "Upgrade" : "Downgrade"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          )
+        })()}
+      </AlertDialog>
     </Section>
   )
 }
