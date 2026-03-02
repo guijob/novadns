@@ -1,21 +1,19 @@
 import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
-import { stripe } from "@/lib/stripe"
+import { paddle } from "@/lib/paddle"
 
 export async function POST() {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  if (!session.stripeCustomerId) {
+  if (!session.paddleCustomerId || !session.paddleSubscriptionId) {
     return NextResponse.json({ error: "No subscription found" }, { status: 400 })
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+  const portalSession = await paddle.customerPortalSessions.create(
+    session.paddleCustomerId,
+    [session.paddleSubscriptionId],
+  )
 
-  const portalSession = await stripe.billingPortal.sessions.create({
-    customer:   session.stripeCustomerId,
-    return_url: `${appUrl}/dashboard/settings`,
-  })
-
-  return NextResponse.json({ url: portalSession.url })
+  return NextResponse.json({ url: portalSession.urls.general.overview })
 }

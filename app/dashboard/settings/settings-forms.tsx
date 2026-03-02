@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
+import { initializePaddle, type Paddle } from "@paddle/paddle-js"
 import { Button } from "@/components/ui/button"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { CrownIcon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons"
-import { PLANS, PAID_PLANS, isPaidPlan } from "@/lib/plans"
+import { PLANS, PAID_PLANS, isPaidPlan, type PlanKey } from "@/lib/plans"
 
 // ─── shared primitives ───────────────────────────────────────────────────────
 
@@ -30,21 +31,39 @@ function Feedback({ error, success }: { error: string; success: string }) {
 
 // ─── Plan ────────────────────────────────────────────────────────────────────
 
-export function PlanSection({ plan }: { plan: string; email: string }) {
+export function PlanSection({ plan, email, clientId, priceIds }: {
+  plan: string
+  email: string
+  clientId: number
+  priceIds: Partial<Record<PlanKey, string>>
+}) {
   const [loading, setLoading] = useState<string | null>(null)
+  const [paddle,  setPaddle]  = useState<Paddle | undefined>()
   const searchParams = useSearchParams()
   const upgraded = searchParams.get("upgraded") === "1"
 
-  async function handleSubscribe(targetPlan: string) {
+  useEffect(() => {
+    initializePaddle({
+      environment: (process.env.NEXT_PUBLIC_PADDLE_ENV ?? "sandbox") as "sandbox" | "production",
+      token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN!,
+      eventCallback(event) {
+        if (event.name === "checkout.completed") {
+          window.location.href = "/dashboard/settings?upgraded=1"
+        }
+      },
+    }).then(setPaddle)
+  }, [])
+
+  function handleSubscribe(targetPlan: PlanKey) {
+    const priceId = priceIds[targetPlan]
+    if (!priceId || !paddle) return
     setLoading(targetPlan)
-    const res  = await fetch("/api/billing/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan: targetPlan }),
+    paddle.Checkout.open({
+      items:      [{ priceId, quantity: 1 }],
+      customer:   { email },
+      customData: { clientId: String(clientId) },
     })
-    const data = await res.json()
-    if (data.url) window.location.href = data.url
-    else setLoading(null)
+    setLoading(null)
   }
 
   async function handlePortal() {
@@ -109,7 +128,7 @@ export function PlanSection({ plan }: { plan: string; email: string }) {
                     size="sm"
                     variant="outline"
                     className="h-7 text-xs"
-                    disabled={anyLoading}
+                    disabled={anyLoading || !paddle}
                     onClick={() => handleSubscribe(key)}
                   >
                     {loading === key ? "Redirecting…" : "Subscribe"}

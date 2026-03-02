@@ -4,13 +4,13 @@ export const PLANS: Record<PlanKey, {
   limit:        number
   monthlyPrice: number
   label:        string
-  stripeEnvKey: string | null
+  paddleEnvKey: string | null
 }> = {
-  free:       { limit: 3,   monthlyPrice: 0,  label: "Free",       stripeEnvKey: null                       },
-  starter:    { limit: 25,  monthlyPrice: 5,  label: "Starter",    stripeEnvKey: "STRIPE_PRICE_STARTER"     },
-  pro:        { limit: 100, monthlyPrice: 15, label: "Pro",        stripeEnvKey: "STRIPE_PRICE_PRO"         },
-  business:   { limit: 200, monthlyPrice: 25, label: "Business",   stripeEnvKey: "STRIPE_PRICE_BUSINESS"    },
-  enterprise: { limit: 500, monthlyPrice: 50, label: "Enterprise", stripeEnvKey: "STRIPE_PRICE_ENTERPRISE"  },
+  free:       { limit: 3,   monthlyPrice: 0,  label: "Free",       paddleEnvKey: null                        },
+  starter:    { limit: 25,  monthlyPrice: 5,  label: "Starter",    paddleEnvKey: "PADDLE_PRICE_STARTER"      },
+  pro:        { limit: 100, monthlyPrice: 15, label: "Pro",        paddleEnvKey: "PADDLE_PRICE_PRO"          },
+  business:   { limit: 200, monthlyPrice: 25, label: "Business",   paddleEnvKey: "PADDLE_PRICE_BUSINESS"     },
+  enterprise: { limit: 500, monthlyPrice: 50, label: "Enterprise", paddleEnvKey: "PADDLE_PRICE_ENTERPRISE"   },
 }
 
 export const PAID_PLANS = (["starter", "pro", "business", "enterprise"] as const) satisfies readonly PlanKey[]
@@ -29,16 +29,16 @@ export function canCustomizeCredentials(plan: string): boolean {
 }
 
 export function getPriceId(plan: PlanKey): string {
-  const { stripeEnvKey } = PLANS[plan]
-  if (!stripeEnvKey) throw new Error("Free plan has no Stripe price")
-  const id = process.env[stripeEnvKey]
-  if (!id) throw new Error(`Missing env var ${stripeEnvKey}`)
+  const { paddleEnvKey } = PLANS[plan]
+  if (!paddleEnvKey) throw new Error("Free plan has no Paddle price")
+  const id = process.env[paddleEnvKey]
+  if (!id) throw new Error(`Missing env var ${paddleEnvKey}`)
   return id
 }
 
 export function getPlanByPriceId(priceId: string): PlanKey | null {
   for (const [key, val] of Object.entries(PLANS)) {
-    if (val.stripeEnvKey && process.env[val.stripeEnvKey] === priceId) {
+    if (val.paddleEnvKey && process.env[val.paddleEnvKey] === priceId) {
       return key as PlanKey
     }
   }

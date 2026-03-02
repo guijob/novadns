@@ -202,7 +202,7 @@ export default function LandingPage() {
           <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
             <a href="#how-it-works" className="hover:text-foreground transition-colors">How it works</a>
-            <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
+            <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
             <a href="#faq" className="hover:text-foreground transition-colors">FAQ</a>
           </div>
 
@@ -662,7 +662,7 @@ export default function LandingPage() {
               <p className="font-mono uppercase tracking-wide text-foreground text-[0.65rem]">Product</p>
               <div className="flex flex-col gap-2">
                 <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-                <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
+                <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
                 <Link href="/docs" className="hover:text-foreground transition-colors">Docs</Link>
               </div>
             </div>
@@ -672,6 +672,15 @@ export default function LandingPage() {
                 <Link href="/login" className="hover:text-foreground transition-colors">Log in</Link>
                 <Link href="/register" className="hover:text-foreground transition-colors">Register</Link>
                 <Link href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link>
+              </div>
+            </div>
+            <div className="space-y-2.5">
+              <p className="font-mono uppercase tracking-wide text-foreground text-[0.65rem]">Legal</p>
+              <div className="flex flex-col gap-2">
+                <Link href="/terms"    className="hover:text-foreground transition-colors">Terms of Service</Link>
+                <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+                <Link href="/cookies" className="hover:text-foreground transition-colors">Cookie Policy</Link>
+                <Link href="/refunds" className="hover:text-foreground transition-colors">Refund Policy</Link>
               </div>
             </div>
           </div>

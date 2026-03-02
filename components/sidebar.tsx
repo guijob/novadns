@@ -113,6 +113,19 @@ export function DashboardShell({ email, plan, activeCount, sidebarOpen = true, c
         <main className="flex-1 p-6 overflow-y-auto">
           {children}
         </main>
+        <footer className="shrink-0 px-6 py-3 border-t border-border flex flex-wrap items-center gap-x-4 gap-y-1.5">
+          {[
+            { href: "/terms",    label: "Terms" },
+            { href: "/privacy",  label: "Privacy" },
+            { href: "/cookies",  label: "Cookies" },
+            { href: "/refunds",  label: "Refunds" },
+          ].map(({ href, label }) => (
+            <Link key={href} href={href} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              {label}
+            </Link>
+          ))}
+          <span className="text-xs text-muted-foreground ml-auto">© {new Date().getFullYear()} NovaDNS</span>
+        </footer>
       </div>
     </SidebarProvider>
   )

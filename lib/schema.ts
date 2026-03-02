@@ -12,8 +12,8 @@ export const clients = pgTable("clients", {
   active:                boolean("active").notNull().default(true),
   resetToken:            varchar("reset_token", { length: 64 }),
   resetTokenExpiresAt:   timestamp("reset_token_expires_at"),
-  stripeCustomerId:      varchar("stripe_customer_id",     { length: 255 }),
-  stripeSubscriptionId:  varchar("stripe_subscription_id", { length: 255 }),
+  paddleCustomerId:      varchar("paddle_customer_id",     { length: 255 }),
+  paddleSubscriptionId:  varchar("paddle_subscription_id", { length: 255 }),
   createdAt:             timestamp("created_at").notNull().defaultNow(),
   updatedAt:             timestamp("updated_at").notNull().defaultNow(),
 })
