@@ -10,6 +10,8 @@ export async function POST() {
     return NextResponse.json({ error: "No subscription found" }, { status: 400 })
   }
 
+  console.log("[portal] env:", process.env.NEXT_PUBLIC_PADDLE_ENV, "customerId:", session.paddleCustomerId, "subId:", session.paddleSubscriptionId)
+
   try {
     const portalSession = await paddle.customerPortalSessions.create(
       session.paddleCustomerId,
