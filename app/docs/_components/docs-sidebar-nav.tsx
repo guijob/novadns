@@ -21,7 +21,8 @@ const navGroups = [
   {
     label: "Guides",
     items: [
-      { href: "/docs/clients", label: "Client Setup" },
+      { href: "/docs/clients",   label: "Client Setup" },
+      { href: "/docs/why-ipv6",  label: "Why IPv6?"    },
     ],
   },
 ]

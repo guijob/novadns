@@ -181,7 +181,8 @@ export default function ClientsPage() {
       </ClientSection>
 
       <PageNav
-        prev={{ href: "/docs/ipv6", label: "IPv6 & Subnets" }}
+        prev={{ href: "/docs/ipv6",     label: "IPv6 & Subnets" }}
+        next={{ href: "/docs/why-ipv6", label: "Why IPv6?"       }}
       />
     </div>
   )

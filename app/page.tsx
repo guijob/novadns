@@ -642,6 +642,16 @@ export default async function LandingPage() {
               </div>
             </div>
             <div className="space-y-2.5">
+              <p className="font-mono uppercase tracking-wide text-foreground text-[0.65rem]">Compare</p>
+              <div className="flex flex-col gap-2">
+                <Link href="/compare/noip"    className="hover:text-foreground transition-colors">vs No-IP</Link>
+                <Link href="/compare/dyndns"  className="hover:text-foreground transition-colors">vs DynDNS</Link>
+                <Link href="/compare/duckdns" className="hover:text-foreground transition-colors">vs Duck DNS</Link>
+                <Link href="/compare/dynu"    className="hover:text-foreground transition-colors">vs Dynu</Link>
+                <Link href="/compare/afraid"  className="hover:text-foreground transition-colors">vs FreeDNS</Link>
+              </div>
+            </div>
+            <div className="space-y-2.5">
               <p className="font-mono uppercase tracking-wide text-foreground text-[0.65rem]">Legal</p>
               <div className="flex flex-col gap-2">
                 <Link href="/terms"    className="hover:text-foreground transition-colors">Terms of Service</Link>

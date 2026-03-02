@@ -1,11 +1,14 @@
 // Server Component
 import Link from "next/link"
+import { Inter } from "next/font/google"
 import { Button } from "@/components/ui/button"
 import { DocsSidebarNav } from "./_components/docs-sidebar-nav"
 
+const inter = Inter({ subsets: ["latin"] })
+
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className={`${inter.className} min-h-screen bg-background text-foreground flex flex-col`}>
 
       {/* ── Top nav ─────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 h-12 border-b border-border bg-background/80 backdrop-blur-md flex items-center shrink-0">
