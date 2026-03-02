@@ -8,7 +8,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { RouterIcon, GlobeIcon, Key01Icon, Audit01Icon } from "@hugeicons/core-free-icons"
+import { RouterIcon, GlobeIcon, Key01Icon, Audit01Icon, ViewIcon, ViewOffIcon } from "@hugeicons/core-free-icons"
 
 const DOT_GRID: React.CSSProperties = {
   backgroundImage: "radial-gradient(circle, currentColor 1px, transparent 1px)",
@@ -32,6 +32,7 @@ function LoginForm() {
   const wasReset     = searchParams.get("reset") === "1"
   const oauthError   = searchParams.get("error") === "oauth"
   const [error,   setError]   = useState(oauthError ? "Google sign-in failed. Please try again." : "")
+  const [showPw,  setShowPw]  = useState(false)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -69,7 +70,17 @@ function LoginForm() {
               Forgot password?
             </Link>
           </div>
-          <Input id="password" name="password" type="password" placeholder="••••••••" required />
+          <div className="relative">
+              <Input id="password" name="password" type={showPw ? "text" : "password"} placeholder="••••••••" required className="pr-9" />
+              <button
+                type="button"
+                onClick={() => setShowPw(v => !v)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                tabIndex={-1}
+              >
+                <HugeiconsIcon icon={showPw ? ViewOffIcon : ViewIcon} strokeWidth={1.5} className="size-4" />
+              </button>
+            </div>
         </Field>
         {wasReset && (
           <p className="text-sm text-green-600 dark:text-green-400">Password updated — sign in with your new password.</p>
