@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { clients } from "@/lib/schema"
 import { setSessionCookie } from "@/lib/auth"
+import { sendWelcomeEmail } from "@/lib/email"
 
 export async function POST(req: NextRequest) {
   const { name, email, password } = await req.json()
@@ -32,6 +33,7 @@ export async function POST(req: NextRequest) {
     .returning({ id: clients.id })
 
   await setSessionCookie(client.id)
+  sendWelcomeEmail(email.toLowerCase().trim(), name.trim()).catch(() => {})
 
   return NextResponse.json({ ok: true })
 }

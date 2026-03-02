@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { getSession } from "@/lib/auth"
-import { ProfileForm, PasswordForm, PlanSection } from "./settings-forms"
+import { ProfileForm, PasswordForm, PlanSection, ConnectedAccountsSection } from "./settings-forms"
 import { PAID_PLANS, getPriceId, type PlanKey } from "@/lib/plans"
 
 export default async function SettingsPage() {
@@ -21,7 +21,8 @@ export default async function SettingsPage() {
 
       <PlanSection plan={session.plan} email={session.email} clientId={session.id} priceIds={priceIds} />
       <ProfileForm initialName={session.name} initialEmail={session.email} />
-      <PasswordForm />
+      <PasswordForm hasPassword={!!session.passwordHash} />
+      <ConnectedAccountsSection googleId={session.googleId ?? null} microsoftId={session.microsoftId ?? null} hasPassword={!!session.passwordHash} />
     </div>
   )
 }

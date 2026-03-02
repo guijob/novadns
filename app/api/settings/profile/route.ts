@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { clients } from "@/lib/schema"
 import { getSession } from "@/lib/auth"
+import { sendEmailChangedEmail } from "@/lib/email"
 
 export async function PATCH(req: NextRequest) {
   const session = await getSession()
@@ -23,7 +24,9 @@ export async function PATCH(req: NextRequest) {
     if (existing) return NextResponse.json({ error: "Email already in use" }, { status: 409 })
   }
 
+  const emailChanged = trimmedEmail !== session.email
   await db.update(clients).set({ name: trimmedName, email: trimmedEmail, updatedAt: new Date() }).where(eq(clients.id, session.id))
+  if (emailChanged) sendEmailChangedEmail(session.email, session.name, trimmedEmail).catch(() => {})
 
   return NextResponse.json({ ok: true })
 }

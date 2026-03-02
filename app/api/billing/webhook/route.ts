@@ -4,21 +4,30 @@ import { paddle } from "@/lib/paddle"
 import { db } from "@/lib/db"
 import { clients, hosts } from "@/lib/schema"
 import { eq, asc } from "drizzle-orm"
-import { getPlanByPriceId, getPlanLimit } from "@/lib/plans"
+import { getPlanByPriceId, getPlanLimit, PLANS, type PlanKey } from "@/lib/plans"
+import {
+  sendSubscriptionUpgradedEmail,
+  sendSubscriptionCanceledEmail,
+} from "@/lib/email"
 
 export const dynamic = "force-dynamic"
 
-async function hardDowngrade(clientId: number, newPlan: string) {
+const baseDomain = process.env.BASE_DOMAIN ?? "novadns.io"
+
+/** Disables hosts beyond the plan limit and returns their subdomains. */
+async function hardDowngrade(clientId: number, newPlan: string): Promise<string[]> {
   const limit    = getPlanLimit(newPlan)
   const allHosts = await db.query.hosts.findMany({
     where:   eq(hosts.clientId, clientId),
     orderBy: asc(hosts.createdAt),
   })
-  for (const host of allHosts.slice(limit)) {
+  const toDisable = allHosts.slice(limit)
+  for (const host of toDisable) {
     await db.update(hosts)
       .set({ active: false, updatedAt: new Date() })
       .where(eq(hosts.id, host.id))
   }
+  return toDisable.map(h => `${h.subdomain}.${baseDomain}`)
 }
 
 export async function POST(req: NextRequest) {
@@ -45,6 +54,12 @@ export async function POST(req: NextRequest) {
       await db.update(clients)
         .set({ plan, paddleCustomerId: customerId, paddleSubscriptionId: subId, updatedAt: new Date() })
         .where(eq(clients.id, Number(clientId)))
+
+      const client = await db.query.clients.findFirst({ where: eq(clients.id, Number(clientId)) })
+      if (client) {
+        const { label, limit } = PLANS[plan as PlanKey]
+        sendSubscriptionUpgradedEmail(client.email, client.name, label, limit).catch(() => {})
+      }
     }
   }
 
@@ -67,7 +82,12 @@ export async function POST(req: NextRequest) {
         .where(eq(clients.id, client.id))
 
       if (getPlanLimit(newPlan) < getPlanLimit(oldPlan)) {
-        await hardDowngrade(client.id, newPlan)
+        const disabled = await hardDowngrade(client.id, newPlan)
+        const { label, limit } = PLANS[newPlan as PlanKey]
+        sendSubscriptionCanceledEmail(client.email, client.name, disabled).catch(() => {})
+      } else {
+        const { label, limit } = PLANS[newPlan as PlanKey]
+        sendSubscriptionUpgradedEmail(client.email, client.name, label, limit).catch(() => {})
       }
     }
   }
@@ -85,7 +105,8 @@ export async function POST(req: NextRequest) {
         .set({ plan: "free", paddleSubscriptionId: null, updatedAt: new Date() })
         .where(eq(clients.id, client.id))
 
-      await hardDowngrade(client.id, "free")
+      const disabled = await hardDowngrade(client.id, "free")
+      sendSubscriptionCanceledEmail(client.email, client.name, disabled).catch(() => {})
     }
   }
 

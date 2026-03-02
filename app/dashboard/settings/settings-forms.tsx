@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { CrownIcon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons"
 import { PLANS, PAID_PLANS, isPaidPlan, type PlanKey } from "@/lib/plans"
+import { unlinkGoogle, unlinkMicrosoft } from "@/lib/actions"
 
 // ─── shared primitives ───────────────────────────────────────────────────────
 
@@ -37,12 +38,15 @@ export function PlanSection({ plan, email, clientId, priceIds }: {
   clientId: number
   priceIds: Partial<Record<PlanKey, string>>
 }) {
+  const billingEnabled = process.env.NEXT_PUBLIC_BILLING_ENABLED === "true"
+
   const [loading, setLoading] = useState<string | null>(null)
   const [paddle,  setPaddle]  = useState<Paddle | undefined>()
   const searchParams = useSearchParams()
   const upgraded = searchParams.get("upgraded") === "1"
 
   useEffect(() => {
+    if (!billingEnabled) return
     initializePaddle({
       environment: (process.env.NEXT_PUBLIC_PADDLE_ENV ?? "sandbox") as "sandbox" | "production",
       token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN!,
@@ -123,7 +127,7 @@ export function PlanSection({ plan, email, clientId, priceIds }: {
                   </span>
                 ) : isPaidPlan(plan) ? (
                   <span className="text-xs text-muted-foreground">via portal</span>
-                ) : (
+                ) : billingEnabled ? (
                   <Button
                     size="sm"
                     variant="outline"
@@ -133,6 +137,8 @@ export function PlanSection({ plan, email, clientId, priceIds }: {
                   >
                     {loading === key ? "Redirecting…" : "Subscribe"}
                   </Button>
+                ) : (
+                  <span className="text-xs text-muted-foreground italic">Coming soon</span>
                 )}
               </div>
             </div>
@@ -145,12 +151,16 @@ export function PlanSection({ plan, email, clientId, priceIds }: {
         {isPaidPlan(plan) ? (
           <div className="flex items-center justify-between gap-4">
             <p className="text-xs text-muted-foreground">Upgrade, downgrade, or cancel via the billing portal.</p>
-            <Button size="sm" variant="outline" onClick={handlePortal} disabled={loading !== null}>
-              {loading === "portal" ? "Redirecting…" : "Manage subscription"}
-            </Button>
+            {billingEnabled && (
+              <Button size="sm" variant="outline" onClick={handlePortal} disabled={loading !== null}>
+                {loading === "portal" ? "Redirecting…" : "Manage subscription"}
+              </Button>
+            )}
           </div>
-        ) : (
+        ) : billingEnabled ? (
           <p className="text-xs text-muted-foreground">Subscribe to a paid plan to increase your host limit.</p>
+        ) : (
+          <p className="text-xs text-muted-foreground">Paid plans coming soon — <a href="mailto:support@novadns.io" className="underline underline-offset-2 hover:text-foreground transition-colors">contact us</a> if you need more hosts.</p>
         )}
       </div>
     </Section>
@@ -227,7 +237,7 @@ export function ProfileForm({ initialName, initialEmail }: { initialName: string
 
 // ─── Password ────────────────────────────────────────────────────────────────
 
-export function PasswordForm() {
+export function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
   const [error,   setError]   = useState("")
   const [success, setSuccess] = useState("")
   const [loading, setLoading] = useState(false)
@@ -240,13 +250,13 @@ export function PasswordForm() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        currentPassword: fd.get("currentPassword"),
+        currentPassword: fd.get("currentPassword") || undefined,
         newPassword:     fd.get("newPassword"),
       }),
     })
     const data = await res.json()
     if (res.ok) {
-      setSuccess("Password updated");
+      setSuccess(hasPassword ? "Password updated" : "Password set");
       (e.target as HTMLFormElement).reset()
     } else {
       setError(data.error ?? "Something went wrong")
@@ -258,19 +268,23 @@ export function PasswordForm() {
     <Section label="Password">
       <form onSubmit={handleSubmit}>
         <div className="divide-y divide-border">
+          {hasPassword && (
+            <div className="grid grid-cols-[140px_1fr] items-center gap-4 px-4 py-3">
+              <label htmlFor="currentPassword" className="text-xs text-muted-foreground">Current password</label>
+              <Input
+                id="currentPassword"
+                name="currentPassword"
+                type="password"
+                placeholder="••••••••"
+                required
+                className="h-7 text-sm"
+              />
+            </div>
+          )}
           <div className="grid grid-cols-[140px_1fr] items-center gap-4 px-4 py-3">
-            <label htmlFor="currentPassword" className="text-xs text-muted-foreground">Current password</label>
-            <Input
-              id="currentPassword"
-              name="currentPassword"
-              type="password"
-              placeholder="••••••••"
-              required
-              className="h-7 text-sm"
-            />
-          </div>
-          <div className="grid grid-cols-[140px_1fr] items-center gap-4 px-4 py-3">
-            <label htmlFor="newPassword" className="text-xs text-muted-foreground">New password</label>
+            <label htmlFor="newPassword" className="text-xs text-muted-foreground">
+              {hasPassword ? "New password" : "Set password"}
+            </label>
             <Input
               id="newPassword"
               name="newPassword"
@@ -286,10 +300,168 @@ export function PasswordForm() {
         <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-border bg-muted/20">
           <Feedback error={error} success={success} />
           <Button type="submit" size="sm" disabled={loading} className="ml-auto">
-            {loading ? "Updating…" : "Update password"}
+            {loading ? "Saving…" : hasPassword ? "Update password" : "Set password"}
           </Button>
         </div>
       </form>
+    </Section>
+  )
+}
+
+// ─── Connected accounts ───────────────────────────────────────────────────────
+
+function OAuthRow({
+  provider,
+  connected,
+  hasPassword,
+  loading,
+  onUnlink,
+  linkHref,
+  logo,
+}: {
+  provider: string
+  connected: boolean
+  hasPassword: boolean
+  loading: boolean
+  onUnlink: () => void
+  linkHref: string
+  logo: React.ReactNode
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 px-4 py-3">
+      <div className="flex items-center gap-3">
+        {logo}
+        <div>
+          <p className="text-sm font-medium">{provider}</p>
+          <p className="text-xs text-muted-foreground">
+            {connected ? `Connected — sign in with ${provider}` : "Not connected"}
+          </p>
+        </div>
+      </div>
+
+      {connected ? (
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 text-xs"
+          disabled={loading || !hasPassword}
+          onClick={onUnlink}
+          title={!hasPassword ? `Set a password first to be able to unlink ${provider}` : undefined}
+        >
+          {loading ? "Unlinking…" : "Unlink"}
+        </Button>
+      ) : (
+        <a
+          href={linkHref}
+          className="inline-flex items-center justify-center h-7 px-3 text-xs font-medium border border-border hover:bg-muted/50 transition-colors"
+        >
+          Connect
+        </a>
+      )}
+    </div>
+  )
+}
+
+const GoogleLogo = () => (
+  <svg className="size-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+  </svg>
+)
+
+const MicrosoftLogo = () => (
+  <svg className="size-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M11.4 2H2v9.4h9.4V2z" fill="#F25022"/>
+    <path d="M22 2h-9.4v9.4H22V2z" fill="#7FBA00"/>
+    <path d="M11.4 12.6H2V22h9.4v-9.4z" fill="#00A4EF"/>
+    <path d="M22 12.6h-9.4V22H22v-9.4z" fill="#FFB900"/>
+  </svg>
+)
+
+export function ConnectedAccountsSection({
+  googleId,
+  microsoftId,
+  hasPassword,
+}: {
+  googleId: string | null
+  microsoftId: string | null
+  hasPassword: boolean
+}) {
+  const searchParams     = useSearchParams()
+  const googleLinked     = searchParams.get("google_linked")    === "1"
+  const microsoftLinked  = searchParams.get("microsoft_linked") === "1"
+  const googleError      = searchParams.get("google_error")
+  const microsoftError   = searchParams.get("microsoft_error")
+
+  const [loadingGoogle,    setLoadingGoogle]    = useState(false)
+  const [loadingMicrosoft, setLoadingMicrosoft] = useState(false)
+  const [error,   setError]   = useState("")
+  const [success, setSuccess] = useState(
+    googleLinked ? "Google account connected successfully"
+    : microsoftLinked ? "Microsoft account connected successfully"
+    : ""
+  )
+
+  async function handleUnlinkGoogle() {
+    setError(""); setLoadingGoogle(true)
+    const res = await unlinkGoogle()
+    if ("ok" in res) setSuccess("Google account disconnected")
+    else setError(res.error ?? "Something went wrong")
+    setLoadingGoogle(false)
+  }
+
+  async function handleUnlinkMicrosoft() {
+    setError(""); setLoadingMicrosoft(true)
+    const res = await unlinkMicrosoft()
+    if ("ok" in res) setSuccess("Microsoft account disconnected")
+    else setError(res.error ?? "Something went wrong")
+    setLoadingMicrosoft(false)
+  }
+
+  return (
+    <Section label="Connected accounts">
+      {(googleError === "taken" || microsoftError === "taken") && (
+        <div className="px-4 py-2.5 border-b border-destructive/30 bg-destructive/5">
+          <p className="text-xs text-destructive">
+            That {googleError === "taken" ? "Google" : "Microsoft"} account is already linked to another NovaDNS account.
+          </p>
+        </div>
+      )}
+
+      <div className="divide-y divide-border">
+        <OAuthRow
+          provider="Google"
+          connected={!!googleId}
+          hasPassword={hasPassword}
+          loading={loadingGoogle}
+          onUnlink={handleUnlinkGoogle}
+          linkHref="/api/auth/google?action=link"
+          logo={<GoogleLogo />}
+        />
+        <OAuthRow
+          provider="Microsoft"
+          connected={!!microsoftId}
+          hasPassword={hasPassword}
+          loading={loadingMicrosoft}
+          onUnlink={handleUnlinkMicrosoft}
+          linkHref="/api/auth/microsoft?action=link"
+          logo={<MicrosoftLogo />}
+        />
+      </div>
+
+      {(error || success) && (
+        <div className="px-4 pb-3 border-t border-border pt-2.5">
+          <Feedback error={error} success={success} />
+        </div>
+      )}
+
+      {(googleId || microsoftId) && !hasPassword && (
+        <div className="px-4 pb-3 border-t border-border pt-2.5">
+          <p className="text-xs text-muted-foreground">Set a password above before unlinking a social account.</p>
+        </div>
+      )}
     </Section>
   )
 }

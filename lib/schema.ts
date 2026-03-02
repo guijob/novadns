@@ -6,12 +6,14 @@ import { pgTable, serial, varchar, integer, boolean, timestamp, text } from "dri
 export const clients = pgTable("clients", {
   id:                    serial("id").primaryKey(),
   email:                 varchar("email", { length: 254 }).notNull().unique(),
-  passwordHash:          varchar("password_hash", { length: 255 }).notNull(),
+  passwordHash:          varchar("password_hash", { length: 255 }),           // null for Google-only accounts
   name:                  varchar("name", { length: 100 }).notNull(),
   plan:                  varchar("plan", { length: 20 }).notNull().default("free"), // "free" | "starter" | "pro" | "business" | "enterprise"
   active:                boolean("active").notNull().default(true),
   resetToken:            varchar("reset_token", { length: 64 }),
   resetTokenExpiresAt:   timestamp("reset_token_expires_at"),
+  googleId:              varchar("google_id",               { length: 255 }).unique(),
+  microsoftId:           varchar("microsoft_id",            { length: 255 }).unique(),
   paddleCustomerId:      varchar("paddle_customer_id",     { length: 255 }),
   paddleSubscriptionId:  varchar("paddle_subscription_id", { length: 255 }),
   createdAt:             timestamp("created_at").notNull().defaultNow(),

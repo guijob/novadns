@@ -611,6 +611,36 @@ export async function regenerateWebhookSecret(id: number) {
   return { secret }
 }
 
+export async function unlinkMicrosoft() {
+  const session = await getSession()
+  if (!session) redirect("/login")
+
+  if (!session.passwordHash)
+    return { error: "Set a password before unlinking Microsoft so you can still sign in" }
+
+  await db.update(clients)
+    .set({ microsoftId: null, updatedAt: new Date() })
+    .where(eq(clients.id, session.id))
+
+  revalidatePath("/dashboard/settings")
+  return { ok: true }
+}
+
+export async function unlinkGoogle() {
+  const session = await getSession()
+  if (!session) redirect("/login")
+
+  if (!session.passwordHash)
+    return { error: "Set a password before unlinking Google so you can still sign in" }
+
+  await db.update(clients)
+    .set({ googleId: null, updatedAt: new Date() })
+    .where(eq(clients.id, session.id))
+
+  revalidatePath("/dashboard/settings")
+  return { ok: true }
+}
+
 export async function resetPassword(formData: FormData) {
   const token    = String(formData.get("token")    ?? "").trim()
   const password = String(formData.get("password") ?? "")
