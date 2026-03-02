@@ -38,15 +38,12 @@ export function PlanSection({ plan, email, clientId, priceIds }: {
   clientId: number
   priceIds: Partial<Record<PlanKey, string>>
 }) {
-  const billingEnabled = process.env.NEXT_PUBLIC_BILLING_ENABLED === "true"
-
   const [loading, setLoading] = useState<string | null>(null)
   const [paddle,  setPaddle]  = useState<Paddle | undefined>()
   const searchParams = useSearchParams()
   const upgraded = searchParams.get("upgraded") === "1"
 
   useEffect(() => {
-    if (!billingEnabled) return
     initializePaddle({
       environment: (process.env.NEXT_PUBLIC_PADDLE_ENV ?? "sandbox") as "sandbox" | "production",
       token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN!,
@@ -127,7 +124,7 @@ export function PlanSection({ plan, email, clientId, priceIds }: {
                   </span>
                 ) : isPaidPlan(plan) ? (
                   <span className="text-xs text-muted-foreground">via portal</span>
-                ) : billingEnabled ? (
+                ) : (
                   <Button
                     size="sm"
                     variant="outline"
@@ -137,8 +134,6 @@ export function PlanSection({ plan, email, clientId, priceIds }: {
                   >
                     {loading === key ? "Redirecting…" : "Subscribe"}
                   </Button>
-                ) : (
-                  <span className="text-xs text-muted-foreground italic">Coming soon</span>
                 )}
               </div>
             </div>
@@ -151,16 +146,12 @@ export function PlanSection({ plan, email, clientId, priceIds }: {
         {isPaidPlan(plan) ? (
           <div className="flex items-center justify-between gap-4">
             <p className="text-xs text-muted-foreground">Upgrade, downgrade, or cancel via the billing portal.</p>
-            {billingEnabled && (
-              <Button size="sm" variant="outline" onClick={handlePortal} disabled={loading !== null}>
-                {loading === "portal" ? "Redirecting…" : "Manage subscription"}
-              </Button>
-            )}
+            <Button size="sm" variant="outline" onClick={handlePortal} disabled={loading !== null}>
+              {loading === "portal" ? "Redirecting…" : "Manage subscription"}
+            </Button>
           </div>
-        ) : billingEnabled ? (
-          <p className="text-xs text-muted-foreground">Subscribe to a paid plan to increase your host limit.</p>
         ) : (
-          <p className="text-xs text-muted-foreground">Paid plans coming soon — <a href="mailto:support@novadns.io" className="underline underline-offset-2 hover:text-foreground transition-colors">contact us</a> if you need more hosts.</p>
+          <p className="text-xs text-muted-foreground">Subscribe to a paid plan to increase your host limit.</p>
         )}
       </div>
     </Section>

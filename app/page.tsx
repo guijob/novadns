@@ -657,6 +657,12 @@ export default async function LandingPage() {
                 <Link href="/refunds" className="hover:text-foreground transition-colors">Refund Policy</Link>
               </div>
             </div>
+            <div className="space-y-2.5">
+              <p className="font-mono uppercase tracking-wide text-foreground text-[0.65rem]">Company</p>
+              <div className="flex flex-col gap-2">
+                <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
+              </div>
+            </div>
           </div>
 
           <p className="text-xs text-muted-foreground self-end">
