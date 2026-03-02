@@ -152,19 +152,15 @@ export default async function LandingPage() {
 
       {/* ── ANNOUNCEMENT STRIP ──────────────────────────────────────── */}
       <div className="relative bg-primary text-primary-foreground text-xs flex items-center justify-center gap-3 px-4 py-2.5 text-center">
-        <span className="font-mono uppercase tracking-widest opacity-70 hidden sm:inline">New</span>
+        <span className="font-mono uppercase tracking-widest opacity-70 hidden sm:inline">IPv6</span>
         <span className="hidden sm:block w-px h-3 bg-primary-foreground/30" />
-        <span>
-          IPv6 subnet support is live — one hostname for your entire{" "}
-          <span className="font-mono">/48</span> or{" "}
-          <span className="font-mono">/64</span> prefix.
-        </span>
-        <a
-          href="#features"
+        <span>Why does IPv6 change everything for Dynamic DNS?</span>
+        <Link
+          href="/docs/why-ipv6"
           className="shrink-0 flex items-center gap-1 underline underline-offset-2 opacity-80 hover:opacity-100 transition-opacity font-medium"
         >
-          Learn more
-        </a>
+          Read the guide
+        </Link>
       </div>
 
       {/* ── NAV ─────────────────────────────────────────────────────── */}
@@ -644,6 +640,7 @@ export default async function LandingPage() {
             <div className="space-y-2.5">
               <p className="font-mono uppercase tracking-wide text-foreground text-[0.65rem]">Compare</p>
               <div className="flex flex-col gap-2">
+                <Link href="/compare"         className="hover:text-foreground transition-colors font-medium">Compare all</Link>
                 <Link href="/compare/noip"    className="hover:text-foreground transition-colors">vs No-IP</Link>
                 <Link href="/compare/dyndns"  className="hover:text-foreground transition-colors">vs DynDNS</Link>
                 <Link href="/compare/duckdns" className="hover:text-foreground transition-colors">vs Duck DNS</Link>
