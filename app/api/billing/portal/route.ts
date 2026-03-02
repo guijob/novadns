@@ -10,10 +10,14 @@ export async function POST() {
     return NextResponse.json({ error: "No subscription found" }, { status: 400 })
   }
 
-  const portalSession = await paddle.customerPortalSessions.create(
-    session.paddleCustomerId,
-    [session.paddleSubscriptionId],
-  )
-
-  return NextResponse.json({ url: portalSession.urls.general.overview })
+  try {
+    const portalSession = await paddle.customerPortalSessions.create(
+      session.paddleCustomerId,
+      [session.paddleSubscriptionId],
+    )
+    return NextResponse.json({ url: portalSession.urls.general.overview })
+  } catch (err) {
+    console.error("[portal] Paddle error:", err)
+    return NextResponse.json({ error: "Failed to create portal session" }, { status: 500 })
+  }
 }

@@ -59,20 +59,30 @@ export function PlanSection({ plan, email, clientId, priceIds }: {
     const priceId = priceIds[targetPlan]
     if (!priceId || !paddle) return
     setLoading(targetPlan)
-    paddle.Checkout.open({
-      items:      [{ priceId, quantity: 1 }],
-      customer:   { email },
-      customData: { clientId: String(clientId) },
-    })
-    setLoading(null)
+    try {
+      paddle.Checkout.open({
+        items:      [{ priceId, quantity: 1 }],
+        customer:   { email },
+        customData: { clientId: String(clientId) },
+      })
+    } catch (err) {
+      console.error("Paddle checkout error:", err)
+    } finally {
+      setLoading(null)
+    }
   }
 
   async function handlePortal() {
     setLoading("portal")
-    const res  = await fetch("/api/billing/portal", { method: "POST" })
-    const data = await res.json()
-    if (data.url) window.location.href = data.url
-    else setLoading(null)
+    try {
+      const res  = await fetch("/api/billing/portal", { method: "POST" })
+      const data = await res.json()
+      if (data.url) window.location.href = data.url
+      else setLoading(null)
+    } catch (err) {
+      console.error("Paddle portal error:", err)
+      setLoading(null)
+    }
   }
 
   const currentPlan = PLANS[plan as keyof typeof PLANS] ?? PLANS.free
