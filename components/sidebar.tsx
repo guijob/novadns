@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { ListViewIcon, CrownIcon, FolderLibraryIcon, WebhookIcon } from "@hugeicons/core-free-icons"
+import { ListViewIcon, CrownIcon, FolderLibraryIcon, WebhookIcon, UserGroupIcon } from "@hugeicons/core-free-icons"
 import {
   Sidebar,
   SidebarContent,
@@ -18,44 +18,49 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { UserMenu } from "@/components/user-menu"
 import { FeedbackButton } from "@/components/feedback-button"
+import { WorkspaceSwitcher } from "@/components/workspace-switcher"
 import { getPlanLimit, PLANS, isPaidPlan } from "@/lib/plans"
 
-const navItems = [
+const personalNavItems = [
   { href: "/dashboard",          label: "Hosts",    icon: ListViewIcon,      exact: true  },
   { href: "/dashboard/groups",   label: "Groups",   icon: FolderLibraryIcon, exact: false },
   { href: "/dashboard/webhooks", label: "Webhooks", icon: WebhookIcon,       exact: false },
 ]
 
+const teamNavItems = [
+  { href: "/dashboard",        label: "Hosts",    icon: ListViewIcon,    exact: true  },
+  { href: "/dashboard/groups", label: "Groups",   icon: FolderLibraryIcon, exact: false },
+  { href: "/dashboard/team",   label: "Team",     icon: UserGroupIcon,   exact: false },
+]
+
+interface Workspace {
+  id: number
+  name: string
+  role: string
+}
+
 interface AppSidebarProps {
   email: string
   plan: string
+  userName: string
+  currentTeamId: number | null
+  teams: Workspace[]
 }
 
-export function AppSidebar({ email, plan }: AppSidebarProps) {
+export function AppSidebar({ email, plan, userName, currentTeamId, teams }: AppSidebarProps) {
   const pathname = usePathname()
+  const navItems = currentTeamId !== null ? teamNavItems : personalNavItems
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href="/dashboard" />}>
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-xs font-bold">
-                N
-              </div>
-              <div className="flex flex-col gap-0.5 leading-none">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-semibold">NovaDNS</span>
-                  {plan === "pro" && (
-                    <span className="inline-flex items-center gap-0.5 rounded px-1 py-px text-[10px] font-semibold bg-primary/10 text-primary leading-none">
-                      <HugeiconsIcon icon={CrownIcon} strokeWidth={2} className="size-2.5" />
-                      Pro
-                    </span>
-                  )}
-                </div>
-                <span className="text-xs text-muted-foreground">Dashboard</span>
-              </div>
-            </SidebarMenuButton>
+            <WorkspaceSwitcher
+              userName={userName}
+              currentTeamId={currentTeamId}
+              teams={teams}
+            />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
@@ -81,14 +86,25 @@ export function AppSidebar({ email, plan }: AppSidebarProps) {
   )
 }
 
-export function DashboardShell({ email, plan, activeCount, sidebarOpen = true, children }: { email: string; plan: string; activeCount: number; sidebarOpen?: boolean; children: React.ReactNode }) {
+export function DashboardShell({
+  email, plan, userName, activeCount, currentTeamId, teams, sidebarOpen = true, children,
+}: {
+  email: string
+  plan: string
+  userName: string
+  activeCount: number
+  currentTeamId: number | null
+  teams: Workspace[]
+  sidebarOpen?: boolean
+  children: React.ReactNode
+}) {
   const limit     = getPlanLimit(plan)
   const atLimit   = activeCount >= limit
   const nearLimit = activeCount >= limit - 1
 
   return (
     <SidebarProvider defaultOpen={sidebarOpen}>
-      <AppSidebar email={email} plan={plan} />
+      <AppSidebar email={email} plan={plan} userName={userName} currentTeamId={currentTeamId} teams={teams} />
       <div className="flex flex-1 flex-col min-w-0">
         <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />

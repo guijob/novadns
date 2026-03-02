@@ -1,4 +1,6 @@
-import { pgTable, serial, varchar, integer, boolean, timestamp, text } from "drizzle-orm/pg-core"
+import { pgTable, serial, varchar, integer, boolean, timestamp, text, pgEnum } from "drizzle-orm/pg-core"
+
+export const teamRoleEnum = pgEnum("team_role", ["owner", "admin", "member"])
 
 // ------------------------------------------------------------------
 // Clients — SaaS customers
@@ -21,11 +23,34 @@ export const clients = pgTable("clients", {
 })
 
 // ------------------------------------------------------------------
+// Teams — shared workspaces
+// ------------------------------------------------------------------
+export const teams = pgTable("teams", {
+  id:        serial("id").primaryKey(),
+  name:      varchar("name", { length: 100 }).notNull(),
+  plan:      varchar("plan", { length: 20 }).notNull().default("free"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+})
+
+export const teamMembers = pgTable("team_members", {
+  id:          serial("id").primaryKey(),
+  teamId:      integer("team_id").notNull().references(() => teams.id, { onDelete: "cascade" }),
+  clientId:    integer("client_id").references(() => clients.id, { onDelete: "cascade" }), // null = pending
+  email:       varchar("email", { length: 254 }).notNull(),
+  role:        teamRoleEnum("role").notNull().default("member"),
+  inviteToken: varchar("invite_token", { length: 64 }),
+  accepted:    boolean("accepted").notNull().default(false),
+  createdAt:   timestamp("created_at").notNull().defaultNow(),
+})
+
+// ------------------------------------------------------------------
 // Host Groups — shared credentials for a set of hosts
 // ------------------------------------------------------------------
 export const hostGroups = pgTable("host_groups", {
   id:           serial("id").primaryKey(),
-  clientId:     integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  clientId:     integer("client_id").references(() => clients.id, { onDelete: "cascade" }),
+  teamId:       integer("team_id").references(() => teams.id, { onDelete: "cascade" }),
   name:         varchar("name", { length: 100 }).notNull(),
   description:  text("description"),
   username:     varchar("username", { length: 32 }).unique(),
@@ -40,7 +65,8 @@ export const hostGroups = pgTable("host_groups", {
 // ------------------------------------------------------------------
 export const hosts = pgTable("hosts", {
   id:          serial("id").primaryKey(),
-  clientId:    integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  clientId:    integer("client_id").references(() => clients.id, { onDelete: "cascade" }),
+  teamId:      integer("team_id").references(() => teams.id, { onDelete: "cascade" }),
   groupId:     integer("group_id").references(() => hostGroups.id, { onDelete: "set null" }),
   subdomain:   varchar("subdomain", { length: 63 }).notNull().unique(), // RFC 1035 label limit
   ipv4:        varchar("ipv4", { length: 15 }),   // current A record value
@@ -83,8 +109,11 @@ export const webhooks = pgTable("webhooks", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 })
 
-export type Client    = typeof clients.$inferSelect
-export type HostGroup = typeof hostGroups.$inferSelect
-export type Host      = typeof hosts.$inferSelect
-export type UpdateLog = typeof updateLog.$inferSelect
-export type Webhook   = typeof webhooks.$inferSelect
+export type Client     = typeof clients.$inferSelect
+export type HostGroup  = typeof hostGroups.$inferSelect
+export type Host       = typeof hosts.$inferSelect
+export type UpdateLog  = typeof updateLog.$inferSelect
+export type Webhook    = typeof webhooks.$inferSelect
+export type Team       = typeof teams.$inferSelect
+export type TeamMember = typeof teamMembers.$inferSelect
+export type TeamRole   = "owner" | "admin" | "member"

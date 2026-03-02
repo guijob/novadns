@@ -17,18 +17,11 @@ function P({ children }: { children: React.ReactNode }) {
   return <p className="text-sm text-muted-foreground leading-relaxed mb-3">{children}</p>
 }
 
-function Li({ children }: { children: React.ReactNode }) {
-  return <li className="text-sm text-muted-foreground leading-relaxed">{children}</li>
-}
-
 const SECTIONS = [
   "Overview",
   "30-Day Money-Back Guarantee",
-  "Prorated Refunds",
-  "Non-Refundable Situations",
   "How to Request a Refund",
   "Processing Time",
-  "Chargebacks",
   "Contact",
 ]
 
@@ -88,73 +81,36 @@ export default function RefundsPage() {
 
             <div className="border border-border px-4 py-3 bg-muted/20 mb-8">
               <p className="text-xs text-muted-foreground leading-relaxed">
-                We want you to be satisfied with {COMPANY}. This policy explains when and how
-                you can receive a refund. All payments are processed by Paddle, our Merchant of
-                Record.
+                We want you to be completely satisfied with {COMPANY}. All payments are processed
+                by <strong className="text-foreground">Paddle</strong>, our Merchant of Record, who
+                also manages refund requests on our behalf.
               </p>
             </div>
 
             {/* 1 */}
             <H2 id="s1">1. Overview</H2>
             <P>
-              {COMPANY} offers monthly subscriptions on a recurring basis. Because the Service is
-              delivered digitally and begins immediately upon subscription, refunds are granted at
-              our discretion in line with the conditions described below. Nothing in this policy
-              limits any statutory rights you may have under applicable consumer protection law.
+              {COMPANY} offers monthly subscriptions. We stand behind the quality of our service
+              and offer a straightforward 30-day money-back guarantee on all paid plans.
             </P>
 
             {/* 2 */}
             <H2 id="s2">2. 30-Day Money-Back Guarantee</H2>
             <P>
-              If you subscribe to a paid plan for the first time and are not satisfied, you may
-              request a full refund within <strong className="text-foreground font-medium">30 days</strong> of
-              your initial payment. This guarantee applies once per customer and covers the first
-              billing charge only.
+              If you are not satisfied with your subscription for any reason, you may request a
+              full refund within <strong className="text-foreground font-medium">30 days</strong> of
+              your payment. No questions asked.
             </P>
             <P>
-              To claim your money-back guarantee, email us at{" "}
+              To request a refund, simply contact us at{" "}
               <a href={`mailto:${CONTACT_EMAIL}`} className="text-foreground underline underline-offset-4 hover:text-primary transition-colors">
                 {CONTACT_EMAIL}
               </a>{" "}
-              within 30 days of the charge with the subject line &ldquo;Refund request&rdquo; and
-              include your account email address.
+              within 30 days of the charge. We will arrange the refund through Paddle.
             </P>
 
             {/* 3 */}
-            <H2 id="s3">3. Prorated Refunds</H2>
-            <P>
-              Outside the 30-day guarantee window, we do not issue prorated refunds for unused
-              time in a billing period. When you cancel, your subscription remains active until
-              the end of the current billing cycle and will not auto-renew.
-            </P>
-            <P>
-              If you upgrade your plan mid-cycle, Paddle handles the prorated difference
-              automatically — you will only be charged for the time on the new plan. No manual
-              refund request is needed for upgrades.
-            </P>
-
-            {/* 4 */}
-            <H2 id="s4">4. Non-Refundable Situations</H2>
-            <P>Refunds will not be issued in the following cases:</P>
-            <ul className="list-disc list-inside space-y-1.5 mb-3 pl-1">
-              <Li>Renewal charges after the initial 30-day guarantee period has passed.</Li>
-              <Li>
-                Accounts suspended or terminated for violations of our{" "}
-                <Link href="/terms" className="text-foreground underline underline-offset-4 hover:text-primary transition-colors">
-                  Terms of Service
-                </Link>
-                .
-              </Li>
-              <Li>Requests made more than 30 days after the charge date.</Li>
-              <Li>Partial months or individual features — subscriptions are billed as a whole plan.</Li>
-              <Li>
-                Dissatisfaction caused by infrastructure outside our control, such as DNS
-                propagation delays or third-party router firmware.
-              </Li>
-            </ul>
-
-            {/* 5 */}
-            <H2 id="s5">5. How to Request a Refund</H2>
+            <H2 id="s3">3. How to Request a Refund</H2>
             <P>To request a refund, please:</P>
             <ol className="list-decimal list-inside space-y-1.5 mb-3 pl-1">
               <li className="text-sm text-muted-foreground leading-relaxed">
@@ -167,41 +123,27 @@ export default function RefundsPage() {
               <li className="text-sm text-muted-foreground leading-relaxed">
                 Include the email address associated with your {COMPANY} account.
               </li>
-              <li className="text-sm text-muted-foreground leading-relaxed">
-                Briefly describe the reason for your request (this helps us improve the service).
-              </li>
             </ol>
             <P>
-              We will review your request and respond within 3 business days. Approved refunds are
-              processed through Paddle back to your original payment method.
+              We will respond within 1 business day. Approved refunds are processed through
+              Paddle back to your original payment method.
             </P>
 
-            {/* 6 */}
-            <H2 id="s6">6. Processing Time</H2>
+            {/* 4 */}
+            <H2 id="s4">4. Processing Time</H2>
             <P>
               Once a refund is approved, Paddle typically processes it within{" "}
               <strong className="text-foreground font-medium">5–10 business days</strong>. The
-              time for the funds to appear in your account depends on your bank or card issuer and
-              may take additional days beyond Paddle&rsquo;s processing time.
+              time for the funds to appear in your account depends on your bank or card issuer.
             </P>
             <P>
-              You will receive an email confirmation from Paddle when the refund has been
-              initiated.
+              You will receive an email confirmation from Paddle when the refund has been initiated.
             </P>
 
-            {/* 7 */}
-            <H2 id="s7">7. Chargebacks</H2>
+            {/* 5 */}
+            <H2 id="s5">5. Contact</H2>
             <P>
-              We ask that you contact us before initiating a chargeback with your bank or card
-              issuer. We are happy to resolve billing disputes quickly and directly. Initiating a
-              chargeback without first contacting us may result in your account being suspended
-              pending resolution.
-            </P>
-
-            {/* 8 */}
-            <H2 id="s8">8. Contact</H2>
-            <P>
-              For refund requests or billing questions, please contact us at:{" "}
+              For refund requests or billing questions, contact us at:{" "}
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
                 className="text-foreground underline underline-offset-4 hover:text-primary transition-colors"

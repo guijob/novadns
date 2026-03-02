@@ -201,3 +201,23 @@ export async function sendPasswordResetEmail(to: string, token: string) {
     `,
   })
 }
+
+// ── Team invite ───────────────────────────────────────────────────────────────
+
+export async function sendTeamInviteEmail(to: string, inviterName: string, teamName: string, inviteUrl: string) {
+  await resend.emails.send({
+    from: from(), to,
+    subject: `${inviterName} invited you to join ${teamName} on NovaDNS`,
+    html: layout(`
+      <h1 style="font-size:20px;font-weight:700;margin:0 0 8px">You've been invited</h1>
+      <p style="color:#555;font-size:14px;margin:0 0 16px">
+        <strong>${inviterName}</strong> has invited you to join the
+        <strong>${teamName}</strong> team on NovaDNS.
+      </p>
+      ${btn("Accept invitation", inviteUrl)}
+      <p style="color:#999;font-size:12px;margin:24px 0 0">
+        If you weren't expecting this invitation, you can safely ignore this email.
+      </p>
+    `),
+  })
+}

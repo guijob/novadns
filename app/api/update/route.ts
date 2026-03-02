@@ -164,14 +164,18 @@ export async function GET(req: NextRequest) {
     if (ipChanged) {
       await db.insert(updateLog).values({ hostId: host.id, ipv4: newIpv4, ipv6: newIpv6, callerIp: caller })
 
-      dispatchWebhook(host.clientId, "host.ip_updated", {
-        host: { id: host.id, subdomain: host.subdomain, fqdn: `${host.subdomain}.${base}`, ttl: host.ttl },
-        ipv4: newIpv4,
-        ipv6: newIpv6,
-      })
+      const webhookOwner = host.teamId ?? host.clientId
+      if (webhookOwner !== null) {
+        dispatchWebhook(webhookOwner, "host.ip_updated", {
+          host: { id: host.id, subdomain: host.subdomain, fqdn: `${host.subdomain}.${base}`, ttl: host.ttl },
+          ipv4: newIpv4,
+          ipv6: newIpv6,
+        })
+      }
     }
 
-    clientIds.add(host.clientId)
+    const ownerId = host.teamId ?? host.clientId
+    if (ownerId !== null) clientIds.add(ownerId)
     lines.push(ipChanged ? `good ${newIpv4 ?? newIpv6 ?? ""}` : `nochg ${newIpv4 ?? newIpv6 ?? ""}`)
   }
 
