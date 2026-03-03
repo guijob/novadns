@@ -1,7 +1,13 @@
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { getSession } from "@/lib/auth"
 import { resolveWorkspace } from "@/lib/workspace"
 import { getTeamMembers } from "@/lib/team-actions"
+
+export const metadata: Metadata = {
+  title: "Team — NovaDNS",
+  robots: { index: false },
+}
 import { PAID_PLANS, getPriceId, type PlanKey } from "@/lib/plans"
 import { db } from "@/lib/db"
 import { teams } from "@/lib/schema"

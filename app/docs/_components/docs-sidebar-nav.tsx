@@ -7,22 +7,38 @@ const navGroups = [
   {
     label: "Getting Started",
     items: [
-      { href: "/docs",                  label: "Overview"    },
-      { href: "/docs/getting-started",  label: "Quick Start" },
+      { href: "/docs",                   label: "Overview"       },
+      { href: "/docs/getting-started",   label: "Quick Start"    },
+      { href: "/docs/what-is-ddns",      label: "What is DDNS?"  },
     ],
   },
   {
     label: "Reference",
     items: [
-      { href: "/docs/api",   label: "API Reference"   },
-      { href: "/docs/ipv6",  label: "IPv6 & Subnets"  },
+      { href: "/docs/api",      label: "API Reference"        },
+      { href: "/docs/dyndns",   label: "DynDNS Compatibility" },
+      { href: "/docs/ipv6",     label: "IPv6 & Subnets"       },
+      { href: "/docs/plans",    label: "Plans & Limits"       },
     ],
   },
   {
     label: "Guides",
     items: [
-      { href: "/docs/clients",   label: "Client Setup" },
-      { href: "/docs/why-ipv6",  label: "Why IPv6?"    },
+      { href: "/docs/clients",         label: "Client Setup"   },
+      { href: "/docs/routers",         label: "Router Setup"   },
+      { href: "/docs/groups",          label: "Groups"         },
+      { href: "/docs/webhooks",        label: "Webhooks"       },
+      { href: "/docs/teams",           label: "Teams"          },
+      { href: "/docs/security",        label: "Security"       },
+      { href: "/docs/troubleshooting", label: "Troubleshooting"},
+    ],
+  },
+  {
+    label: "Learn",
+    items: [
+      { href: "/docs/home-server",        label: "Home Server Guide"      },
+      { href: "/docs/static-vs-dynamic",  label: "Static vs Dynamic IP"   },
+      { href: "/docs/why-ipv6",           label: "Why IPv6?"              },
     ],
   },
 ]

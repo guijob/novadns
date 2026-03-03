@@ -1,6 +1,20 @@
 // Server Component
+import type { Metadata } from "next"
 import { CodeBlock, c } from "../_components/code-block"
 import { PageNav } from "../_components/page-nav"
+
+export const metadata: Metadata = {
+  title: "API Reference — NovaDNS Docs",
+  description: "Full reference for the NovaDNS update API. Token authentication, DynDNS-compatible endpoint, parameters, and response formats.",
+  openGraph: {
+    title: "API Reference — NovaDNS Docs",
+    description: "Full reference for the NovaDNS update API. Token authentication, DynDNS-compatible endpoint, parameters, and response formats.",
+    type: "article",
+    url: "https://novadns.io/docs/api",
+    siteName: "NovaDNS",
+    images: [{ url: "https://novadns.io/opengraph-image" }],
+  },
+}
 
 function InlineCode({ children }: { children: React.ReactNode }) {
   return (
@@ -62,8 +76,9 @@ export default function ApiPage() {
               <p className="text-xs text-muted-foreground mt-1">Legacy compat</p>
             </div>
             <div className="text-sm text-muted-foreground leading-relaxed">
-              Use HTTP Basic Auth with your account email as the username and the host token as
-              the password. Required by most routers and NAS firmware using the DynDNS protocol.
+              Use HTTP Basic Auth with the host&apos;s username and password (from host settings →
+              Basic Auth credentials in the dashboard). Required by routers and NAS firmware using
+              the DynDNS protocol.
             </div>
           </div>
         </div>
@@ -90,11 +105,11 @@ export default function ApiPage() {
             <Method
               method="GET"
               path="/nic/update"
-              desc="DynDNS-compatible endpoint. Accepts Basic Auth (email:token) and the standard hostname and myip query parameters. Returns a DynDNS-style response string."
+              desc="DynDNS-compatible endpoint. Accepts Basic Auth (host username:password) and the standard hostname and myip query parameters. Returns a DynDNS-style response string."
             />
             <CodeBlock filename="curl" label="basic auth — DynDNS compat">
               {c.prompt("$ ")}{c.kw("curl")}{c.plain(" \\\n")
-              }{c.plain("  ")}{c.str('"https://')}{c.url("email%40example.com")}{c.str(":")}{c.url("YOUR_TOKEN")}{c.str("@novadns.io/nic/update")}{c.plain(" \\\n")
+              }{c.plain("  ")}{c.str('"https://')}{c.url("YOUR_HOST_USERNAME")}{c.str(":")}{c.url("YOUR_HOST_PASSWORD")}{c.str("@novadns.io/nic/update")}{c.plain(" \\\n")
               }{c.plain("  ")}{c.flag("?hostname=")}{c.str("home.novaip.link")}{c.flag("&myip=")}{c.str("203.0.113.42")}{c.str('"')}
             </CodeBlock>
           </div>

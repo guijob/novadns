@@ -1,6 +1,20 @@
 // Server Component
+import type { Metadata } from "next"
 import { CodeBlock, c } from "../_components/code-block"
 import { PageNav } from "../_components/page-nav"
+
+export const metadata: Metadata = {
+  title: "Client Setup — NovaDNS Docs",
+  description: "Copy-paste configurations for ddclient, inadyn, and other DDNS clients to keep your NovaDNS hostname updated automatically.",
+  openGraph: {
+    title: "Client Setup — NovaDNS Docs",
+    description: "Copy-paste configurations for ddclient, inadyn, and other DDNS clients to keep your NovaDNS hostname updated automatically.",
+    type: "article",
+    url: "https://novadns.io/docs/clients",
+    siteName: "NovaDNS",
+    images: [{ url: "https://novadns.io/opengraph-image" }],
+  },
+}
 
 function InlineCode({ children }: { children: React.ReactNode }) {
   return (
@@ -96,8 +110,8 @@ export default function ClientsPage() {
           {"\n"}
           {c.key("protocol")}{c.plain("=")}{c.str("dyndns2")}{"\n"}
           {c.key("server")}{c.plain("=")}{c.str("novadns.io")}{"\n"}
-          {c.key("login")}{c.plain("=")}{c.str("your@email.com")}{"\n"}
-          {c.key("password")}{c.plain("=")}{c.str("YOUR_HOST_TOKEN")}{"\n"}
+          {c.key("login")}{c.plain("=")}{c.str("YOUR_HOST_USERNAME")}{"\n"}
+          {c.key("password")}{c.plain("=")}{c.str("YOUR_HOST_PASSWORD")}{"\n"}
           {c.key("use")}{c.plain("=")}{c.str("web")}{c.plain(", ")}{c.key("web")}{c.plain("=")}{c.str("checkip.dyndns.com")}{"\n"}
           {c.key("ssl")}{c.plain("=")}{c.str("yes")}{"\n"}
           {c.key("daemon")}{c.plain("=")}{c.str("300")}{c.plain("   ")}{c.dim("# check every 5 minutes")}{"\n"}
@@ -130,8 +144,8 @@ export default function ClientsPage() {
           {c.plain("  ")}{c.key("ssl")}{c.plain("        = ")}{c.str("true")}{"\n"}
           {c.plain("  ")}{c.key("server-name")}{c.plain(" = ")}{c.str("novadns.io")}{"\n"}
           {c.plain("  ")}{c.key("server-url")}{c.plain("  = ")}{c.str('"/nic/update?hostname=%h&myip=%i"')}{"\n"}
-          {c.plain("  ")}{c.key("username")}{c.plain("    = ")}{c.str("your@email.com")}{"\n"}
-          {c.plain("  ")}{c.key("password")}{c.plain("    = ")}{c.str("YOUR_HOST_TOKEN")}{"\n"}
+          {c.plain("  ")}{c.key("username")}{c.plain("    = ")}{c.str("YOUR_HOST_USERNAME")}{"\n"}
+          {c.plain("  ")}{c.key("password")}{c.plain("    = ")}{c.str("YOUR_HOST_PASSWORD")}{"\n"}
           {c.plain("  ")}{c.key("hostname")}{c.plain("    = ")}{c.str("home.novaip.link")}{"\n"}
           {c.plain("}")}
         </CodeBlock>
@@ -148,15 +162,15 @@ export default function ClientsPage() {
       <ClientSection
         id="router-nas"
         title="Router / NAS (DynDNS UI)"
-        desc="Most routers and NAS devices have a built-in DynDNS client under their DDNS or dynamic DNS settings. Use these values regardless of brand."
+        desc="Most routers and NAS devices have a built-in DynDNS client under their DDNS or dynamic DNS settings. Username and password are the host's Basic Auth credentials from the dashboard (host settings → Basic Auth credentials), not your account login."
       >
         <div className="border border-border divide-y divide-border mb-4">
           {[
             { field: "Service / Provider", value: "DynDNS  (or Custom)" },
             { field: "Server",             value: "novadns.io"          },
             { field: "Hostname",           value: "home.novaip.link"     },
-            { field: "Username",           value: "your@email.com"      },
-            { field: "Password",           value: "YOUR_HOST_TOKEN"     },
+            { field: "Username",           value: "YOUR_HOST_USERNAME"  },
+            { field: "Password",           value: "YOUR_HOST_PASSWORD"  },
           ].map(({ field, value }) => (
             <div key={field} className="grid grid-cols-[180px_1fr] items-center px-4 py-3 gap-4">
               <span className="text-xs text-muted-foreground">{field}</span>

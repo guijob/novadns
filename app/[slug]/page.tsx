@@ -1,5 +1,11 @@
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { getHosts, getGroups } from "@/lib/actions"
+
+export const metadata: Metadata = {
+  title: "Dashboard — NovaDNS",
+  robots: { index: false },
+}
 import { getSession } from "@/lib/auth"
 import { resolveWorkspace } from "@/lib/workspace"
 import { getUserTeams } from "@/lib/team-context"

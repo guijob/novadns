@@ -1,4 +1,18 @@
+import type { Metadata } from "next"
 import { cookies } from "next/headers"
+
+export const metadata: Metadata = {
+  title: "NovaDNS — Free Dynamic DNS for Home Servers",
+  description: "Stable hostnames for dynamic IPs. NovaDNS keeps your home server, lab, or IoT device reachable even as your IP changes. Free plan, no credit card required.",
+  openGraph: {
+    title: "NovaDNS — Free Dynamic DNS for Home Servers",
+    description: "Stable hostnames for dynamic IPs. NovaDNS keeps your home server, lab, or IoT device reachable even as your IP changes. Free plan, no credit card required.",
+    type: "website",
+    url: "https://novadns.io",
+    siteName: "NovaDNS",
+    images: [{ url: "https://novadns.io/opengraph-image" }],
+  },
+}
 import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
 import { clients } from "@/lib/schema"

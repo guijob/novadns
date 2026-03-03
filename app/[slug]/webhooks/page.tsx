@@ -1,7 +1,13 @@
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { getSession } from "@/lib/auth"
 import { resolveWorkspace } from "@/lib/workspace"
 import { getWebhooks } from "@/lib/actions"
+
+export const metadata: Metadata = {
+  title: "Webhooks — NovaDNS",
+  robots: { index: false },
+}
 import { WebhooksTable } from "./webhooks-table"
 
 export default async function WebhooksPage({

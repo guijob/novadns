@@ -1,5 +1,12 @@
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { eq } from "drizzle-orm"
+
+export const metadata: Metadata = {
+  title: "Accept Invitation — NovaDNS",
+  description: "You've been invited to join a team on NovaDNS.",
+  robots: { index: false },
+}
 import { db } from "@/lib/db"
 import { teamMembers, teams } from "@/lib/schema"
 import { getSession } from "@/lib/auth"

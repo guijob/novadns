@@ -1,5 +1,11 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+
+export const metadata: Metadata = {
+  title: "Terms of Service — NovaDNS",
+  description: "The terms and conditions that govern your use of the NovaDNS service.",
+}
 
 const EFFECTIVE_DATE = "1 June 2025"
 const COMPANY        = "NovaDNS"

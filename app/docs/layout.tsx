@@ -3,6 +3,8 @@ import Link from "next/link"
 import { Inter } from "next/font/google"
 import { Button } from "@/components/ui/button"
 import { DocsSidebarNav } from "./_components/docs-sidebar-nav"
+import { TableOfContents } from "./_components/table-of-contents"
+import { PageFeedback } from "./_components/page-feedback"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -12,7 +14,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
 
       {/* ── Top nav ─────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 h-12 border-b border-border bg-background/80 backdrop-blur-md flex items-center shrink-0">
-        <div className="w-full px-6 flex items-center justify-between gap-4">
+        <div className="w-full max-w-[90rem] mx-auto px-6 flex items-center justify-between gap-4">
 
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm">
@@ -36,7 +38,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
       </header>
 
       {/* ── Body ────────────────────────────────────────────────── */}
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0 max-w-[90rem] mx-auto w-full">
 
         {/* Sidebar */}
         <aside className="hidden md:block w-56 shrink-0 border-r border-border">
@@ -49,8 +51,16 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
         <main className="flex-1 min-w-0 px-8 py-10 lg:px-12">
           <div className="max-w-3xl">
             {children}
+            <PageFeedback />
           </div>
         </main>
+
+        {/* On this page */}
+        <aside className="hidden xl:block w-52 shrink-0 border-l border-border">
+          <div className="sticky top-12 pt-6 pb-10 px-4 overflow-y-auto max-h-[calc(100vh-3rem)]">
+            <TableOfContents />
+          </div>
+        </aside>
       </div>
     </div>
   )

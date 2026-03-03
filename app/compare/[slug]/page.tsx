@@ -14,6 +14,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: `${c.tagline} | NovaDNS`,
     description: c.summary,
+    openGraph: {
+      title: `${c.tagline} | NovaDNS`,
+      description: c.summary,
+      type: "website" as const,
+      url: `https://novadns.io/compare/${slug}`,
+      siteName: "NovaDNS",
+      images: [{ url: "https://novadns.io/opengraph-image" }],
+    },
   }
 }
 

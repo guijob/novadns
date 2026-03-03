@@ -17,8 +17,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NovaDNS",
-  description: "Dynamic DNS management",
+  title: "NovaDNS — Free Dynamic DNS",
+  description: "Stable hostnames for dynamic IPs. Keep your home server, lab, or device reachable even as your IP changes.",
+  openGraph: {
+    title: "NovaDNS — Free Dynamic DNS",
+    description: "Stable hostnames for dynamic IPs. Keep your home server, lab, or device reachable even as your IP changes.",
+    type: "website",
+    siteName: "NovaDNS",
+    images: [{ url: "https://novadns.io/opengraph-image" }],
+  },
 };
 
 // Runs before React hydrates — prevents flash of wrong theme

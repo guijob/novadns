@@ -152,6 +152,26 @@ export async function sendSubscriptionCanceledEmail(
   })
 }
 
+export async function sendDocsFeedbackEmail(page: string, helpful: boolean, comment: string) {
+  const base = process.env.BASE_DOMAIN ?? "novaip.link"
+
+  await resend.emails.send({
+    from:    `NovaDNS Docs <noreply@${base}>`,
+    to:      `support@novadns.io`,
+    subject: `Docs feedback: ${helpful ? "👍" : "👎"} ${page}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+        <h1 style="font-size:18px;font-weight:700;margin:0 0 16px">Docs feedback</h1>
+        <table style="border-collapse:collapse;width:100%;margin-bottom:16px">
+          <tr><td style="font-size:12px;color:#999;padding:4px 0;width:80px">Page</td><td style="font-size:14px;color:#111;font-family:monospace">${page}</td></tr>
+          <tr><td style="font-size:12px;color:#999;padding:4px 0">Helpful</td><td style="font-size:14px;color:#111">${helpful ? "Yes ✅" : "No ❌"}</td></tr>
+        </table>
+        ${comment ? `<p style="font-size:14px;color:#444;white-space:pre-wrap;border-left:3px solid #eee;padding-left:12px;margin:0">${comment.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>` : "<p style=\"font-size:13px;color:#999\">No comment provided.</p>"}
+      </div>
+    `,
+  })
+}
+
 export async function sendFeedbackEmail(from: string, message: string) {
   const base = process.env.BASE_DOMAIN ?? "novaip.link"
 

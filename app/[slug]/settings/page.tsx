@@ -1,7 +1,13 @@
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { getSession } from "@/lib/auth"
 import { resolveWorkspace } from "@/lib/workspace"
 import { db } from "@/lib/db"
+
+export const metadata: Metadata = {
+  title: "Settings — NovaDNS",
+  robots: { index: false },
+}
 import { clients } from "@/lib/schema"
 import { eq } from "drizzle-orm"
 import { ProfileForm, PasswordForm, PlanSection, ConnectedAccountsSection, UsernameForm, MfaSection } from "./settings-forms"

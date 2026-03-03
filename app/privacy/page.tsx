@@ -1,5 +1,11 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+
+export const metadata: Metadata = {
+  title: "Privacy Policy — NovaDNS",
+  description: "How NovaDNS collects, uses, and protects your personal data.",
+}
 
 const EFFECTIVE_DATE = "1 June 2025"
 const COMPANY        = "NovaDNS"

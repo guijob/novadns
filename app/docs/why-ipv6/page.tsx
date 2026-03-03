@@ -1,5 +1,19 @@
 // Server Component
+import type { Metadata } from "next"
 import { PageNav } from "../_components/page-nav"
+
+export const metadata: Metadata = {
+  title: "Why IPv6? — NovaDNS Docs",
+  description: "Learn why IPv6 matters for home networks and self-hosting, and how NovaDNS supports dual-stack DNS updates.",
+  openGraph: {
+    title: "Why IPv6? — NovaDNS Docs",
+    description: "Learn why IPv6 matters for home networks and self-hosting, and how NovaDNS supports dual-stack DNS updates.",
+    type: "article",
+    url: "https://novadns.io/docs/why-ipv6",
+    siteName: "NovaDNS",
+    images: [{ url: "https://novadns.io/opengraph-image" }],
+  },
+}
 
 function H2({ id, children }: { id: string; children: React.ReactNode }) {
   return <h2 id={id} className="text-base font-semibold mb-3 mt-10 first:mt-0">{children}</h2>

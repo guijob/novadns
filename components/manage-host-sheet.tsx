@@ -61,6 +61,7 @@ export function ManageHostSheet({ host, base, plan, groups, userTeams, open, onO
     setSaveError(""); setSaveSuccess(""); setConfirmDelete(false); setNewPassword(null)
     setCustomUser(""); setCustomPwd(""); setCustomError(""); setCustomSuccess("")
     setTransferDest(""); setConfirmTransfer(false); setTransferError(""); setTransferring(false)
+    setDeleting(false)
   }, [open, host?.id])
 
   async function fetchLog() {

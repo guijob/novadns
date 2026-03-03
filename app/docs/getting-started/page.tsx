@@ -1,5 +1,19 @@
 // Server Component
+import type { Metadata } from "next"
 import Link from "next/link"
+
+export const metadata: Metadata = {
+  title: "Quick Start — NovaDNS Docs",
+  description: "Get your first dynamic DNS host running in under 5 minutes. Create a host, test the update endpoint, and configure your client.",
+  openGraph: {
+    title: "Quick Start — NovaDNS Docs",
+    description: "Get your first dynamic DNS host running in under 5 minutes. Create a host, test the update endpoint, and configure your client.",
+    type: "article",
+    url: "https://novadns.io/docs/getting-started",
+    siteName: "NovaDNS",
+    images: [{ url: "https://novadns.io/opengraph-image" }],
+  },
+}
 import { HugeiconsIcon } from "@hugeicons/react"
 import { CheckmarkCircle02Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons"
 import { CodeBlock, c } from "../_components/code-block"
@@ -104,8 +118,8 @@ export default function GettingStartedPage() {
             inadyn, pfSense, Synology DSM, ASUS routers, OpenWrt, and UniFi gateways.
           </p>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Point your client at <InlineCode>novadns.io</InlineCode> with your email as the
-            username and your host token as the password. See the{" "}
+            Point your client at <InlineCode>novadns.io</InlineCode> using the host&apos;s
+            username and password from the dashboard (host settings → Basic Auth credentials). See the{" "}
             <Link href="/docs/clients" className="text-primary underline underline-offset-4 hover:opacity-80 transition-opacity">
               Client Setup guide
             </Link>{" "}

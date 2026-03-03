@@ -1,6 +1,20 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { competitors, type FeatureValue } from "./[slug]/data"
+
+export const metadata: Metadata = {
+  title: "NovaDNS vs Competitors — Dynamic DNS Comparison",
+  description: "See how NovaDNS compares to DynDNS, No-IP, DuckDNS, Cloudflare, and others. Features, pricing, and protocol support side by side.",
+  openGraph: {
+    title: "NovaDNS vs Competitors — Dynamic DNS Comparison",
+    description: "See how NovaDNS compares to DynDNS, No-IP, DuckDNS, Cloudflare, and others. Features, pricing, and protocol support side by side.",
+    type: "website",
+    url: "https://novadns.io/compare",
+    siteName: "NovaDNS",
+    images: [{ url: "https://novadns.io/opengraph-image" }],
+  },
+}
 
 // Deduplicate feature labels preserving order
 const allFeatures = Array.from(

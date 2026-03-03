@@ -1,7 +1,21 @@
 // Server Component
+import type { Metadata } from "next"
 import Link from "next/link"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { CrownIcon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons"
+
+export const metadata: Metadata = {
+  title: "IPv6 & Subnets — NovaDNS Docs",
+  description: "How NovaDNS handles IPv6 addresses and CIDR subnet prefixes alongside IPv4 in dynamic DNS updates.",
+  openGraph: {
+    title: "IPv6 & Subnets — NovaDNS Docs",
+    description: "How NovaDNS handles IPv6 addresses and CIDR subnet prefixes alongside IPv4 in dynamic DNS updates.",
+    type: "article",
+    url: "https://novadns.io/docs/ipv6",
+    siteName: "NovaDNS",
+    images: [{ url: "https://novadns.io/opengraph-image" }],
+  },
+}
 import { CodeBlock, c } from "../_components/code-block"
 import { PageNav } from "../_components/page-nav"
 

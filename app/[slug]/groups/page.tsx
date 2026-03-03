@@ -1,6 +1,12 @@
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { getSession } from "@/lib/auth"
+
+export const metadata: Metadata = {
+  title: "Host Groups — NovaDNS",
+  robots: { index: false },
+}
 import { getGroups } from "@/lib/actions"
 import { resolveWorkspace } from "@/lib/workspace"
 import { GroupsTable } from "./groups-table"
