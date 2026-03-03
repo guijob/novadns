@@ -32,9 +32,10 @@ import {
 interface UserMenuProps {
   email: string
   plan: string
+  settingsHref?: string
 }
 
-export function UserMenu({ email, plan }: UserMenuProps) {
+export function UserMenu({ email, plan, settingsHref = "/dashboard/settings" }: UserMenuProps) {
   const router = useRouter()
   const { theme, setTheme } = useTheme()
 
@@ -66,7 +67,7 @@ export function UserMenu({ email, plan }: UserMenuProps) {
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>
-          <DropdownMenuItem render={<Link href="/dashboard/settings" />}>
+          <DropdownMenuItem render={<Link href={settingsHref} />}>
             <HugeiconsIcon icon={Settings01Icon} strokeWidth={2} />
             Settings
           </DropdownMenuItem>

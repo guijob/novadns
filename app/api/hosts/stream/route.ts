@@ -1,9 +1,10 @@
 import { NextRequest } from "next/server"
-import { eq } from "drizzle-orm"
+import { eq, and, isNull } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { hosts } from "@/lib/schema"
 import { getSession } from "@/lib/auth"
 import { redis, hostUpdateKey } from "@/lib/redis"
+import { resolveWorkspace } from "@/lib/workspace"
 
 export const maxDuration = 60
 
@@ -14,9 +15,18 @@ export async function GET(req: NextRequest) {
   const session = await getSession()
   if (!session) return new Response("Unauthorized", { status: 401 })
 
+  const slug      = req.nextUrl.searchParams.get("slug")
+  const workspace = slug ? await resolveWorkspace(slug, session.id) : null
+  if (!workspace) return new Response("Not Found", { status: 404 })
+
   const clientId = session.id
   const encoder  = new TextEncoder()
   const key      = hostUpdateKey(clientId)
+
+  const hostWhere =
+    workspace.type === "team"
+      ? eq(hosts.teamId, workspace.teamId)
+      : and(eq(hosts.clientId, workspace.clientId), isNull(hosts.teamId))
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -37,7 +47,7 @@ export async function GET(req: NextRequest) {
 
       async function fetchHosts() {
         return db.query.hosts.findMany({
-          where: eq(hosts.clientId, clientId),
+          where: hostWhere,
           orderBy: (h, { desc }) => [desc(h.createdAt)],
         })
       }

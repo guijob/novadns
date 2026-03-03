@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { updateHost, regenerateToken, regenerateHostPassword, setHostCredentials, removeHost, getUpdateLog, assignHostToGroup } from "@/lib/actions"
+import { updateHost, regenerateToken, regenerateHostPassword, setHostCredentials, removeHost, getUpdateLog, assignHostToGroup, transferHost } from "@/lib/actions"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { CopyTokenButton } from "@/components/copy-token-button"
-import type { Host, HostGroup, UpdateLog } from "@/lib/schema"
+import type { Host, HostGroup, UpdateLog, Team, TeamRole } from "@/lib/schema"
 import { canCustomizeCredentials } from "@/lib/plans"
 
 interface Props {
@@ -20,6 +20,7 @@ interface Props {
   base: string
   plan: string
   groups: HostGroup[]
+  userTeams: { team: Team; role: TeamRole }[]
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -32,7 +33,7 @@ function timeAgo(date: Date | string) {
   return `${Math.floor(secs / 86400)}d ago`
 }
 
-export function ManageHostSheet({ host, base, plan, groups, open, onOpenChange }: Props) {
+export function ManageHostSheet({ host, base, plan, groups, userTeams, open, onOpenChange }: Props) {
   const canCustom = canCustomizeCredentials(plan)
   const router = useRouter()
   const [saveError,     setSaveError]     = useState("")
@@ -45,16 +46,21 @@ export function ManageHostSheet({ host, base, plan, groups, open, onOpenChange }
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [log,           setLog]           = useState<UpdateLog[]>([])
   const [logLoading,    setLogLoading]    = useState(false)
-  const [customUser,    setCustomUser]    = useState("")
-  const [customPwd,     setCustomPwd]     = useState("")
-  const [customSaving,  setCustomSaving]  = useState(false)
-  const [customError,   setCustomError]   = useState("")
-  const [customSuccess, setCustomSuccess] = useState("")
+  const [customUser,       setCustomUser]       = useState("")
+  const [customPwd,        setCustomPwd]        = useState("")
+  const [customSaving,     setCustomSaving]     = useState(false)
+  const [customError,      setCustomError]      = useState("")
+  const [customSuccess,    setCustomSuccess]    = useState("")
+  const [transferDest,     setTransferDest]     = useState<string>("")
+  const [confirmTransfer,  setConfirmTransfer]  = useState(false)
+  const [transferring,     setTransferring]     = useState(false)
+  const [transferError,    setTransferError]    = useState("")
 
   useEffect(() => {
     if (!open || !host) return
     setSaveError(""); setSaveSuccess(""); setConfirmDelete(false); setNewPassword(null)
     setCustomUser(""); setCustomPwd(""); setCustomError(""); setCustomSuccess("")
+    setTransferDest(""); setConfirmTransfer(false); setTransferError(""); setTransferring(false)
   }, [open, host?.id])
 
   async function fetchLog() {
@@ -114,6 +120,29 @@ export function ManageHostSheet({ host, base, plan, groups, open, onOpenChange }
     else { setCustomSuccess("Credentials updated"); setCustomUser(""); setCustomPwd(""); router.refresh() }
     setCustomSaving(false)
   }
+
+  async function handleTransfer() {
+    if (!host || !transferDest) return
+    setTransferring(true); setTransferError("")
+    const destinationTeamId = transferDest === "personal" ? null : Number(transferDest)
+    const result = await transferHost(host.id, destinationTeamId)
+    if ("error" in result) {
+      setTransferError(result.error ?? "Transfer failed")
+      setTransferring(false)
+    } else {
+      setTransferring(false)
+      onOpenChange(false)
+      router.refresh()
+    }
+  }
+
+  // Destinations = personal (if host is in a team) + teams where user is owner/admin (excluding current team)
+  const transferDestinations: { id: string; label: string }[] = host ? [
+    ...(host.teamId !== null ? [{ id: "personal", label: "Personal workspace" }] : []),
+    ...userTeams
+      .filter(t => (t.role === "owner" || t.role === "admin") && t.team.id !== host.teamId)
+      .map(t => ({ id: String(t.team.id), label: t.team.name })),
+  ] : []
 
   if (!host) return null
 
@@ -308,6 +337,52 @@ export function ManageHostSheet({ host, base, plan, groups, open, onOpenChange }
                   </form>
                 )}
               </div>
+
+              {transferDestinations.length > 0 && (
+                <>
+                  <Separator />
+                  <div className="space-y-2.5">
+                    <p className="text-sm font-medium">Transfer to workspace</p>
+                    <p className="text-xs text-muted-foreground">
+                      Move this host to a different workspace. Group assignment will be cleared.
+                    </p>
+                    <select
+                      value={transferDest}
+                      onChange={e => { setTransferDest(e.target.value); setConfirmTransfer(false); setTransferError("") }}
+                      className="flex h-9 w-full border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <option value="">Select destination…</option>
+                      {transferDestinations.map(d => (
+                        <option key={d.id} value={d.id}>{d.label}</option>
+                      ))}
+                    </select>
+                    {transferError && <p className="text-xs text-destructive">{transferError}</p>}
+                    {transferDest && !confirmTransfer && (
+                      <Button variant="outline" size="sm" onClick={() => setConfirmTransfer(true)}>
+                        Transfer
+                      </Button>
+                    )}
+                    {confirmTransfer && (
+                      <div className="border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-3 space-y-3">
+                        <p className="text-xs text-amber-800 dark:text-amber-300">
+                          Transfer <span className="font-medium">{host.subdomain}.{base}</span> to{" "}
+                          <span className="font-medium">
+                            {transferDestinations.find(d => d.id === transferDest)?.label}
+                          </span>? The update URL stays the same.
+                        </p>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={handleTransfer} disabled={transferring}>
+                            {transferring ? "Transferring…" : "Confirm transfer"}
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => setConfirmTransfer(false)}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
 
               <Separator />
 

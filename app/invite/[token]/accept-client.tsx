@@ -31,7 +31,7 @@ export function AcceptInviteClient({
       if ("error" in res) {
         setError(res.error ?? "Something went wrong")
       } else {
-        router.push("/dashboard")
+        router.push(res.teamSlug ? `/${res.teamSlug}` : "/")
       }
     })
   }
@@ -92,7 +92,7 @@ export function AcceptInviteClient({
             <Button onClick={handleAccept} disabled={pending} className="w-full">
               {pending ? "Joining…" : `Accept & join ${teamName}`}
             </Button>
-            <Button variant="ghost" render={<Link href="/dashboard" />} className="w-full">
+            <Button variant="ghost" render={<Link href="/" />} className="w-full">
               Decline
             </Button>
           </div>

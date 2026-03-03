@@ -1,3 +1,8 @@
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
+import { db } from "@/lib/db"
+import { clients } from "@/lib/schema"
+import { eq } from "drizzle-orm"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -17,7 +22,6 @@ import {
   ArrowRight01Icon,
 } from "@hugeicons/core-free-icons"
 import { getSession } from "@/lib/auth"
-import { UserMenu } from "@/components/user-menu"
 import { LandingFaq } from "@/components/landing-faq"
 
 // ─── constants ──────────────────────────────────────────────────────────────
@@ -147,6 +151,22 @@ const compatClients = [
 export default async function LandingPage() {
   const session = await getSession()
 
+  if (session) {
+    const jar = await cookies()
+    const lastSlug = jar.get("last_workspace")?.value
+
+    if (lastSlug) {
+      redirect(`/${lastSlug}`)
+    }
+
+    // Fall back to personal slug
+    const client = await db.query.clients.findFirst({
+      where: eq(clients.id, session.id),
+      columns: { slug: true },
+    })
+    redirect(`/${client?.slug ?? session.id}`)
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
 
@@ -181,23 +201,14 @@ export default async function LandingPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            {session ? (
-              <>
-                <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/dashboard" />}>
-                  Dashboard
-                </Button>
-                <UserMenu email={session.email} plan={session.plan} />
-              </>
-            ) : (
-              <>
-                <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/login" />}>
-                  Log in
-                </Button>
-                <Button size="sm" nativeButton={false} render={<Link href="/register" />}>
-                  Get started
-                </Button>
-              </>
-            )}
+            <>
+              <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/login" />}>
+                Log in
+              </Button>
+              <Button size="sm" nativeButton={false} render={<Link href="/register" />}>
+                Get started
+              </Button>
+            </>
           </div>
         </div>
       </nav>

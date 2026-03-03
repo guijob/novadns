@@ -44,6 +44,23 @@ export async function setSessionCookie(clientId: number) {
   })
 }
 
+export async function signMfaChallengeToken(clientId: number): Promise<string> {
+  return new SignJWT({ sub: String(clientId), mfa: true })
+    .setProtectedHeader({ alg: "HS256" })
+    .setExpirationTime("5m")
+    .sign(secret())
+}
+
+export async function verifyMfaChallengeToken(token: string): Promise<number | null> {
+  try {
+    const { payload } = await jwtVerify(token, secret())
+    if (!payload.mfa) return null
+    return Number(payload.sub)
+  } catch {
+    return null
+  }
+}
+
 export async function clearSessionCookie() {
   const jar = await cookies()
   jar.delete(COOKIE)

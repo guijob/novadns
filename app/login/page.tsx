@@ -8,7 +8,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { RouterIcon, GlobeIcon, Key01Icon, Audit01Icon, ViewIcon, ViewOffIcon } from "@hugeicons/core-free-icons"
+import { RouterIcon, GlobeIcon, Key01Icon, Audit01Icon, ViewIcon, ViewOffIcon, ArrowLeft01Icon } from "@hugeicons/core-free-icons"
 
 const DOT_GRID: React.CSSProperties = {
   backgroundImage: "radial-gradient(circle, currentColor 1px, transparent 1px)",
@@ -31,11 +31,17 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const wasReset     = searchParams.get("reset") === "1"
   const oauthError   = searchParams.get("error") === "oauth"
+  const mfaToken     = searchParams.get("mfa_token") ?? ""
+
+  const [phase,          setPhase]          = useState<"password" | "mfa">(mfaToken ? "mfa" : "password")
+  const [challengeToken, setChallengeToken] = useState(mfaToken)
+  const [useBackup,      setUseBackup]      = useState(false)
+
   const [error,   setError]   = useState(oauthError ? "Google sign-in failed. Please try again." : "")
   const [showPw,  setShowPw]  = useState(false)
   const [loading, setLoading] = useState(false)
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handlePasswordSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError("")
     setLoading(true)
@@ -47,17 +53,118 @@ function LoginForm() {
       body: JSON.stringify({ email: fd.get("email"), password: fd.get("password") }),
     })
 
+    const data = await res.json()
+
     if (res.ok) {
-      router.push("/dashboard")
+      if (data.mfaRequired) {
+        setChallengeToken(data.challengeToken)
+        setPhase("mfa")
+        setLoading(false)
+      } else {
+        router.push(`/${data.slug}`)
+      }
     } else {
-      const { error } = await res.json()
-      setError(error ?? "Login failed")
+      setError(data.error ?? "Login failed")
       setLoading(false)
     }
   }
 
+  async function handleMfaSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setError("")
+    setLoading(true)
+
+    const fd = new FormData(e.currentTarget)
+    const code = (fd.get("code") as string ?? "").trim()
+
+    const res = await fetch("/api/auth/mfa/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ challengeToken, code }),
+    })
+
+    const data = await res.json()
+    if (res.ok) {
+      router.push(`/${data.slug}`)
+    } else {
+      setError(data.error ?? "Invalid code")
+      setLoading(false)
+    }
+  }
+
+  if (phase === "mfa") {
+    return (
+      <form onSubmit={handleMfaSubmit}>
+        <FieldGroup>
+          <div className="mb-2">
+            <p className="text-sm text-muted-foreground">
+              {useBackup
+                ? "Enter one of your backup codes."
+                : "Enter the 6-digit code from your authenticator app."}
+            </p>
+          </div>
+
+          <Field>
+            <FieldLabel htmlFor="code">
+              {useBackup ? "Backup code" : "Authenticator code"}
+            </FieldLabel>
+            {useBackup ? (
+              <Input
+                id="code"
+                name="code"
+                type="text"
+                placeholder="XXXX-XXXX"
+                autoFocus
+                autoComplete="off"
+                required
+              />
+            ) : (
+              <Input
+                id="code"
+                name="code"
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="000000"
+                autoFocus
+                autoComplete="one-time-code"
+                required
+              />
+            )}
+          </Field>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Verifying…" : "Continue"}
+          </Button>
+
+          <button
+            type="button"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors text-center"
+            onClick={() => { setUseBackup(v => !v); setError("") }}
+          >
+            {useBackup ? "Use authenticator code instead" : "Use a backup code"}
+          </button>
+
+          {/* Only show Back when there's a password form to return to */}
+          {!mfaToken && (
+            <button
+              type="button"
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => { setPhase("password"); setError(""); setUseBackup(false) }}
+            >
+              <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={1.5} className="size-3.5" />
+              Back
+            </button>
+          )}
+        </FieldGroup>
+      </form>
+    )
+  }
+
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handlePasswordSubmit}>
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>

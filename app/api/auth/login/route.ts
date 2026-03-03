@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs"
 import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { clients } from "@/lib/schema"
-import { setSessionCookie } from "@/lib/auth"
+import { setSessionCookie, signMfaChallengeToken } from "@/lib/auth"
 
 export async function POST(req: NextRequest) {
   const { email, password } = await req.json()
@@ -29,7 +29,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
   }
 
+  if (client.mfaEnabled && client.totpSecret) {
+    const challengeToken = await signMfaChallengeToken(client.id)
+    return NextResponse.json({ mfaRequired: true, challengeToken })
+  }
+
   await setSessionCookie(client.id)
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, slug: client.slug })
 }

@@ -3,8 +3,9 @@ import { jwtVerify } from "jose"
 import { db } from "@/lib/db"
 import { clients } from "@/lib/schema"
 import { eq } from "drizzle-orm"
-import { setSessionCookie } from "@/lib/auth"
+import { setSessionCookie, signMfaChallengeToken } from "@/lib/auth"
 import { sendWelcomeEmail } from "@/lib/email"
+import { generateSlug, findAvailableSlug } from "@/lib/slug"
 
 const secret = () => new TextEncoder().encode(process.env.JWT_SECRET!)
 
@@ -60,12 +61,16 @@ export async function GET(req: NextRequest) {
       where: eq(clients.googleId, googleUser.id),
     })
     if (taken && taken.id !== statePayload.clientId) {
-      return NextResponse.redirect(`${appUrl}/dashboard/settings?google_error=taken`)
+      const linkedClient = await db.query.clients.findFirst({ where: eq(clients.id, statePayload.clientId) })
+      const slug = linkedClient?.slug ?? ""
+      return NextResponse.redirect(`${appUrl}/${slug}/settings?google_error=taken`)
     }
     await db.update(clients)
       .set({ googleId: googleUser.id, updatedAt: new Date() })
       .where(eq(clients.id, statePayload.clientId))
-    return NextResponse.redirect(`${appUrl}/dashboard/settings?google_linked=1`)
+    const linkedClient = await db.query.clients.findFirst({ where: eq(clients.id, statePayload.clientId) })
+    const slug = linkedClient?.slug ?? ""
+    return NextResponse.redirect(`${appUrl}/${slug}/settings?google_linked=1`)
   }
 
   // ── Login / signup mode ──────────────────────────────────────────
@@ -95,12 +100,22 @@ export async function GET(req: NextRequest) {
         googleId: googleUser.id,
       })
       .returning({ id: clients.id })
+
+    const slugBase = generateSlug(googleUser.email.toLowerCase().split("@")[0])
+    const slug = await findAvailableSlug(slugBase)
+    await db.update(clients).set({ slug }).where(eq(clients.id, inserted.id))
+
     client = await db.query.clients.findFirst({ where: eq(clients.id, inserted.id) })
     if (client) sendWelcomeEmail(client.email, client.name).catch(() => {})
   }
 
   if (!client || !client.active) return fail("oauth")
 
+  if (client.mfaEnabled && client.totpSecret) {
+    const challengeToken = await signMfaChallengeToken(client.id)
+    return NextResponse.redirect(`${appUrl}/login?mfa_token=${encodeURIComponent(challengeToken)}`)
+  }
+
   await setSessionCookie(client.id)
-  return NextResponse.redirect(`${appUrl}/dashboard`)
+  return NextResponse.redirect(`${appUrl}/${client.slug ?? ""}`)
 }

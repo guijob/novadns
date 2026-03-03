@@ -5,6 +5,7 @@ import { db } from "@/lib/db"
 import { clients } from "@/lib/schema"
 import { setSessionCookie } from "@/lib/auth"
 import { sendWelcomeEmail } from "@/lib/email"
+import { generateSlug, findAvailableSlug } from "@/lib/slug"
 
 export async function POST(req: NextRequest) {
   const { name, email, password } = await req.json()
@@ -31,6 +32,10 @@ export async function POST(req: NextRequest) {
     .insert(clients)
     .values({ name: name.trim(), email: email.toLowerCase().trim(), passwordHash })
     .returning({ id: clients.id })
+
+  const slugBase = generateSlug(email.toLowerCase().trim().split("@")[0])
+  const slug = await findAvailableSlug(slugBase)
+  await db.update(clients).set({ slug }).where(eq(clients.id, client.id))
 
   await setSessionCookie(client.id)
   sendWelcomeEmail(email.toLowerCase().trim(), name.trim()).catch(() => {})

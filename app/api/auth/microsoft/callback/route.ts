@@ -3,8 +3,9 @@ import { jwtVerify } from "jose"
 import { db } from "@/lib/db"
 import { clients } from "@/lib/schema"
 import { eq } from "drizzle-orm"
-import { setSessionCookie } from "@/lib/auth"
+import { setSessionCookie, signMfaChallengeToken } from "@/lib/auth"
 import { sendWelcomeEmail } from "@/lib/email"
+import { generateSlug, findAvailableSlug } from "@/lib/slug"
 
 const secret = () => new TextEncoder().encode(process.env.JWT_SECRET!)
 
@@ -56,8 +57,6 @@ export async function GET(req: NextRequest) {
   if (!profileRes.ok) return fail("oauth")
 
   const msUser = await profileRes.json() as MicrosoftUser
-  console.log("[microsoft oauth] id:", msUser.id, "mail:", msUser.mail, "upn:", msUser.userPrincipalName, "name:", msUser.displayName)
-  // Microsoft personal accounts use userPrincipalName as email when mail is null
   const email = (msUser.mail ?? msUser.userPrincipalName).toLowerCase()
   if (!email) return fail("oauth")
 
@@ -67,12 +66,16 @@ export async function GET(req: NextRequest) {
       where: eq(clients.microsoftId, msUser.id),
     })
     if (taken && taken.id !== statePayload.clientId) {
-      return NextResponse.redirect(`${appUrl}/dashboard/settings?microsoft_error=taken`)
+      const linkedClient = await db.query.clients.findFirst({ where: eq(clients.id, statePayload.clientId) })
+      const slug = linkedClient?.slug ?? ""
+      return NextResponse.redirect(`${appUrl}/${slug}/settings?microsoft_error=taken`)
     }
     await db.update(clients)
       .set({ microsoftId: msUser.id, updatedAt: new Date() })
       .where(eq(clients.id, statePayload.clientId))
-    return NextResponse.redirect(`${appUrl}/dashboard/settings?microsoft_linked=1`)
+    const linkedClient = await db.query.clients.findFirst({ where: eq(clients.id, statePayload.clientId) })
+    const slug = linkedClient?.slug ?? ""
+    return NextResponse.redirect(`${appUrl}/${slug}/settings?microsoft_linked=1`)
   }
 
   // ── Login / signup mode ───────────────────────────────────────────────
@@ -102,12 +105,22 @@ export async function GET(req: NextRequest) {
         microsoftId: msUser.id,
       })
       .returning({ id: clients.id })
+
+    const slugBase = generateSlug(email.split("@")[0])
+    const slug = await findAvailableSlug(slugBase)
+    await db.update(clients).set({ slug }).where(eq(clients.id, inserted.id))
+
     client = await db.query.clients.findFirst({ where: eq(clients.id, inserted.id) })
     if (client) sendWelcomeEmail(client.email, client.name).catch(() => {})
   }
 
   if (!client || !client.active) return fail("oauth")
 
+  if (client.mfaEnabled && client.totpSecret) {
+    const challengeToken = await signMfaChallengeToken(client.id)
+    return NextResponse.redirect(`${appUrl}/login?mfa_token=${encodeURIComponent(challengeToken)}`)
+  }
+
   await setSessionCookie(client.id)
-  return NextResponse.redirect(`${appUrl}/dashboard`)
+  return NextResponse.redirect(`${appUrl}/${client.slug ?? ""}`)
 }

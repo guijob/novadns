@@ -3,16 +3,18 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { ListViewIcon, CrownIcon, FolderLibraryIcon, WebhookIcon, UserGroupIcon } from "@hugeicons/core-free-icons"
+import { ListViewIcon, CrownIcon, FolderLibraryIcon, WebhookIcon, UserGroupIcon, Settings01Icon } from "@hugeicons/core-free-icons"
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
   SidebarRail,
+  SidebarSeparator,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
@@ -20,36 +22,47 @@ import { UserMenu } from "@/components/user-menu"
 import { FeedbackButton } from "@/components/feedback-button"
 import { WorkspaceSwitcher } from "@/components/workspace-switcher"
 import { getPlanLimit, PLANS, isPaidPlan } from "@/lib/plans"
+import type { WorkspaceContext } from "@/lib/workspace"
 
-const personalNavItems = [
-  { href: "/dashboard",          label: "Hosts",    icon: ListViewIcon,      exact: true  },
-  { href: "/dashboard/groups",   label: "Groups",   icon: FolderLibraryIcon, exact: false },
-  { href: "/dashboard/webhooks", label: "Webhooks", icon: WebhookIcon,       exact: false },
-]
+const SECTION_LABELS: Record<string, string> = {
+  groups:   "Groups",
+  webhooks: "Webhooks",
+  team:     "Team",
+  settings: "Settings",
+}
 
-const teamNavItems = [
-  { href: "/dashboard",        label: "Hosts",    icon: ListViewIcon,    exact: true  },
-  { href: "/dashboard/groups", label: "Groups",   icon: FolderLibraryIcon, exact: false },
-  { href: "/dashboard/team",   label: "Team",     icon: UserGroupIcon,   exact: false },
-]
-
-interface Workspace {
-  id: number
-  name: string
-  role: string
+function HeaderSection() {
+  const pathname = usePathname()
+  const segment = pathname.split("/").filter(Boolean).slice(1).join("/")
+  const topSegment = segment.split("/")[0] ?? ""
+  const label = SECTION_LABELS[topSegment]
+  if (!label) return null
+  return <span className="text-sm text-muted-foreground">{label}</span>
 }
 
 interface AppSidebarProps {
+  slug: string
+  workspace: WorkspaceContext
+  workspaces: WorkspaceContext[]
   email: string
-  plan: string
   userName: string
-  currentTeamId: number | null
-  teams: Workspace[]
+  personalSlug: string
 }
 
-export function AppSidebar({ email, plan, userName, currentTeamId, teams }: AppSidebarProps) {
+export function AppSidebar({ slug, workspace, workspaces, email, userName, personalSlug }: AppSidebarProps) {
   const pathname = usePathname()
-  const navItems = currentTeamId !== null ? teamNavItems : personalNavItems
+
+  const navItems = workspace.type === "personal"
+    ? [
+        { href: `/${slug}`,           label: "Hosts",    icon: ListViewIcon,      exact: true  },
+        { href: `/${slug}/groups`,    label: "Groups",   icon: FolderLibraryIcon, exact: false },
+        { href: `/${slug}/webhooks`,  label: "Webhooks", icon: WebhookIcon,       exact: false },
+      ]
+    : [
+        { href: `/${slug}`,           label: "Hosts",    icon: ListViewIcon,      exact: true  },
+        { href: `/${slug}/groups`,    label: "Groups",   icon: FolderLibraryIcon, exact: false },
+        { href: `/${slug}/team`,      label: "Team",     icon: UserGroupIcon,     exact: false },
+      ]
 
   return (
     <Sidebar collapsible="icon">
@@ -58,8 +71,9 @@ export function AppSidebar({ email, plan, userName, currentTeamId, teams }: AppS
           <SidebarMenuItem>
             <WorkspaceSwitcher
               userName={userName}
-              currentTeamId={currentTeamId}
-              teams={teams}
+              currentSlug={slug}
+              workspaces={workspaces}
+              personalSlug={personalSlug}
             />
           </SidebarMenuItem>
         </SidebarMenu>
@@ -81,47 +95,84 @@ export function AppSidebar({ email, plan, userName, currentTeamId, teams }: AppS
         </SidebarMenu>
       </SidebarContent>
 
+      <SidebarFooter>
+        <SidebarSeparator />
+        <SidebarMenu className="px-2 pb-2">
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              render={<Link href={`/${personalSlug}/settings`} />}
+              isActive={pathname.includes("/settings")}
+              tooltip="Settings"
+            >
+              <HugeiconsIcon icon={Settings01Icon} strokeWidth={2} />
+              <span>Settings</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+
       <SidebarRail />
     </Sidebar>
   )
 }
 
 export function DashboardShell({
-  email, plan, userName, activeCount, currentTeamId, teams, sidebarOpen = true, children,
+  slug,
+  workspace,
+  workspaces,
+  email,
+  userName,
+  activeCount,
+  sidebarOpen = true,
+  children,
 }: {
+  slug: string
+  workspace: WorkspaceContext
+  workspaces: WorkspaceContext[]
   email: string
-  plan: string
   userName: string
   activeCount: number
-  currentTeamId: number | null
-  teams: Workspace[]
   sidebarOpen?: boolean
   children: React.ReactNode
 }) {
+  const plan = workspace.plan
   const limit     = getPlanLimit(plan)
   const atLimit   = activeCount >= limit
   const nearLimit = activeCount >= limit - 1
 
+  // The personal workspace is always the first one with type "personal"
+  const personalWs = workspaces.find(ws => ws.type === "personal")
+  const personalSlug = personalWs?.slug ?? slug
+  const settingsHref = `/${personalSlug}/settings`
+
   return (
     <SidebarProvider defaultOpen={sidebarOpen}>
-      <AppSidebar email={email} plan={plan} userName={userName} currentTeamId={currentTeamId} teams={teams} />
+      <AppSidebar
+        slug={slug}
+        workspace={workspace}
+        workspaces={workspaces}
+        email={email}
+        userName={userName}
+        personalSlug={personalSlug}
+      />
       <div className="flex flex-1 flex-col min-w-0">
         <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="h-4" />
+          <HeaderSection />
           <div className="ml-auto flex items-center gap-3">
             <FeedbackButton />
             <Link href="/docs" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
               Docs
             </Link>
-            <UserMenu email={email} plan={plan} />
+            <UserMenu email={email} plan={plan} settingsHref={settingsHref} />
           </div>
         </header>
         {nearLimit && (
           <div className={`flex items-center gap-3 px-4 py-2.5 text-sm ${atLimit ? "bg-destructive/10 text-destructive" : "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"}`}>
             <HugeiconsIcon icon={CrownIcon} strokeWidth={2} className="size-4 shrink-0" />
             {atLimit
-              ? <>{PLANS[plan as keyof typeof PLANS]?.label ?? "Your"} plan limit of {limit} hosts reached.{!isPaidPlan(plan) && <> <a href="/dashboard/settings" className="underline underline-offset-2">Upgrade</a> to add more.</>}</>
+              ? <>{PLANS[plan as keyof typeof PLANS]?.label ?? "Your"} plan limit of {limit} hosts reached.{!isPaidPlan(plan) && <> <a href={settingsHref} className="underline underline-offset-2">Upgrade</a> to add more.</>}</>
               : <>You&apos;re using {activeCount} of {limit} hosts on the {PLANS[plan as keyof typeof PLANS]?.label ?? plan} plan.</>
             }
           </div>

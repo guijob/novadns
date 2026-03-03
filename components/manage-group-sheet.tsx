@@ -17,11 +17,12 @@ interface Props {
   group: HostGroup | null
   base: string
   plan: string
+  slug: string
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-export function ManageGroupSheet({ group, base, plan, open, onOpenChange }: Props) {
+export function ManageGroupSheet({ group, base, plan, slug, open, onOpenChange }: Props) {
   const router = useRouter()
   const canCustomize = plan === "pro" || plan === "business" || plan === "enterprise"
   const [saveError,     setSaveError]     = useState("")
@@ -51,7 +52,7 @@ export function ManageGroupSheet({ group, base, plan, open, onOpenChange }: Prop
 
   async function fetchMembers() {
     if (!group) return
-    const [groupHosts, hosts] = await Promise.all([getGroupHosts(group.id), getHosts()])
+    const [groupHosts, hosts] = await Promise.all([getGroupHosts(group.id), getHosts(slug)])
     setMembers(groupHosts)
     setAllHosts(hosts)
   }

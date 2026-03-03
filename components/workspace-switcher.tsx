@@ -1,6 +1,5 @@
 "use client"
 
-import { useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { UserIcon, UserGroupIcon, PlusSignIcon, CheckmarkCircle01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons"
@@ -13,40 +12,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { SidebarMenuButton } from "@/components/ui/sidebar"
-import { switchWorkspace } from "@/lib/team-actions"
-
-interface Workspace {
-  id: number
-  name: string
-  role: string
-}
+import type { WorkspaceContext } from "@/lib/workspace"
 
 interface WorkspaceSwitcherProps {
   userName: string
-  currentTeamId: number | null
-  teams: Workspace[]
+  currentSlug: string
+  workspaces: WorkspaceContext[]
+  personalSlug: string
 }
 
-export function WorkspaceSwitcher({ userName, currentTeamId, teams }: WorkspaceSwitcherProps) {
+export function WorkspaceSwitcher({ userName, currentSlug, workspaces, personalSlug }: WorkspaceSwitcherProps) {
   const router = useRouter()
-  const [pending, startTransition] = useTransition()
 
-  const currentTeam = teams.find(t => t.id === currentTeamId)
-  const label = currentTeam ? currentTeam.name : "Personal"
-  const isPersonal = currentTeamId === null
-
-  function handleSwitch(teamId: number | null) {
-    startTransition(async () => {
-      await switchWorkspace(teamId)
-      router.refresh()
-    })
-  }
+  const current = workspaces.find(ws => ws.slug === currentSlug)
+  const isPersonal = current?.type === "personal"
+  const label = isPersonal ? "Personal" : (current?.slug ?? currentSlug)
 
   const trigger = (
     <SidebarMenuButton
       size="lg"
       className="data-[popup-open]:bg-sidebar-accent data-[popup-open]:text-sidebar-accent-foreground"
-      disabled={pending}
     >
       <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-xs font-bold shrink-0">
         {isPersonal ? (userName[0]?.toUpperCase() ?? "U") : (label[0]?.toUpperCase() ?? "T")}
@@ -65,29 +50,28 @@ export function WorkspaceSwitcher({ userName, currentTeamId, teams }: WorkspaceS
       <DropdownMenuContent className="w-56" align="start" side="bottom" sideOffset={4}>
         <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Workspaces</DropdownMenuLabel>
 
-        {/* Personal */}
-        <DropdownMenuItem onClick={() => handleSwitch(null)} className="gap-2">
-          <HugeiconsIcon icon={UserIcon} strokeWidth={2} className="size-4 shrink-0" />
-          <span className="flex-1 truncate">Personal</span>
-          {isPersonal && <HugeiconsIcon icon={CheckmarkCircle01Icon} strokeWidth={2} className="size-4 text-primary" />}
-        </DropdownMenuItem>
-
-        {/* Teams */}
-        {teams.length > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            {teams.map(t => (
-              <DropdownMenuItem key={t.id} onClick={() => handleSwitch(t.id)} className="gap-2">
-                <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} className="size-4 shrink-0" />
-                <span className="flex-1 truncate">{t.name}</span>
-                {currentTeamId === t.id && <HugeiconsIcon icon={CheckmarkCircle01Icon} strokeWidth={2} className="size-4 text-primary" />}
-              </DropdownMenuItem>
-            ))}
-          </>
-        )}
+        {workspaces.map(ws => (
+          <DropdownMenuItem
+            key={ws.slug}
+            onClick={() => router.push(`/${ws.slug}`)}
+            className="gap-2"
+          >
+            <HugeiconsIcon
+              icon={ws.type === "personal" ? UserIcon : UserGroupIcon}
+              strokeWidth={2}
+              className="size-4 shrink-0"
+            />
+            <span className="flex-1 truncate">
+              {ws.type === "personal" ? "Personal" : ws.slug}
+            </span>
+            {ws.slug === currentSlug && (
+              <HugeiconsIcon icon={CheckmarkCircle01Icon} strokeWidth={2} className="size-4 text-primary" />
+            )}
+          </DropdownMenuItem>
+        ))}
 
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => router.push("/dashboard/team/new")} className="gap-2">
+        <DropdownMenuItem onClick={() => router.push(`/${personalSlug}/team/new`)} className="gap-2">
           <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} className="size-4 shrink-0" />
           <span>Create team</span>
         </DropdownMenuItem>

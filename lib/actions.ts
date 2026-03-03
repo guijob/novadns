@@ -2,23 +2,24 @@
 
 import { randomBytes } from "crypto"
 import { hash } from "bcryptjs"
-import { eq, and, count, isNull, sql } from "drizzle-orm"
+import { eq, and, count, isNull } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { db } from "./db"
-import { hosts, hostGroups, updateLog, clients, webhooks } from "./schema"
+import { hosts, hostGroups, updateLog, clients, webhooks, teams, teamMembers } from "./schema"
 import { dispatchWebhook } from "./webhooks"
 import { getSession } from "./auth"
-import { getTeamContext } from "./team-context"
-import { getPlanLimit, canCustomizeCredentials } from "./plans"
+import { resolveWorkspace } from "./workspace"
+import { getPlanLimit, isPaidPlan, canCustomizeCredentials } from "./plans"
 import { deleteDnsRecord } from "./dns"
 import { sendPasswordResetEmail, sendFeedbackEmail } from "./email"
+import { isValidSlug, findAvailableSlug } from "./slug"
+import type { WorkspaceContext } from "./workspace"
 
-// Returns the effective where-clause owner for hosts/groups
-async function getOwnerScope(session: NonNullable<Awaited<ReturnType<typeof getSession>>>) {
-  const team = await getTeamContext(session.id)
-  if (team) return { teamId: team.teamId, clientId: null as null, plan: team.team.plan, role: team.role }
-  return { teamId: null as null, clientId: session.id, plan: session.plan, role: "owner" as const }
+// Derive scope from a WorkspaceContext for drizzle where clauses
+function workspaceToScope(workspace: WorkspaceContext) {
+  if (workspace.type === "team") return { teamId: workspace.teamId, clientId: null as null }
+  return { teamId: null as null, clientId: workspace.clientId }
 }
 
 function hostScope(scope: { teamId: number | null; clientId: number | null }) {
@@ -35,15 +36,12 @@ function token() {
   return randomBytes(32).toString("hex")
 }
 
-/** Random 10-char lowercase alphanumeric username */
 function genUsername() {
-  return randomBytes(6).toString("hex") // 12 hex chars → take 10
-    .slice(0, 10)
+  return randomBytes(6).toString("hex").slice(0, 10)
 }
 
-/** Random password in the format xxxx-xxxx-xxxx — easy to enter on router UIs */
 function genPassword() {
-  const seg = () => randomBytes(2).toString("hex") // 4 hex chars per segment
+  const seg = () => randomBytes(2).toString("hex")
   return `${seg()}-${seg()}-${seg()}`
 }
 
@@ -51,69 +49,65 @@ function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")
 }
 
+async function getWorkspace(slug: string, session: NonNullable<Awaited<ReturnType<typeof getSession>>>) {
+  const workspace = await resolveWorkspace(slug, session.id)
+  if (!workspace) redirect("/login")
+  return workspace
+}
+
 async function checkPlanLimit(scope: { teamId: number | null; clientId: number | null }, plan: string) {
-  const limit = getPlanLimit(plan)
+  // Teams must have a paid plan — a free team has no host slots
+  const limit = (scope.teamId !== null && plan === "free") ? 0 : getPlanLimit(plan)
   const [{ value }] = await db.select({ value: count() }).from(hosts)
     .where(and(hostScope(scope), eq(hosts.active, true)))
   if (value >= limit) return { error: "plan_limit" }
   return null
 }
 
-// ── Create (redirect variant — used by the /hosts/new page) ─────────
-export async function createHost(formData: FormData) {
-  const session = await getSession()
-  if (!session) redirect("/login")
-
-  const scope   = await getOwnerScope(session)
-  const limited = await checkPlanLimit(scope, scope.plan)
-  if (limited) return limited
-
-  const subdomain = slugify(String(formData.get("subdomain") ?? ""))
-  const description = String(formData.get("description") ?? "").trim() || null
-  const ttl = Math.max(30, Math.min(86400, Number(formData.get("ttl")) || 60))
-
-  if (!subdomain) return { error: "Invalid subdomain" }
-
-  const exists = await db.query.hosts.findFirst({ where: eq(hosts.subdomain, subdomain) })
-  if (exists) return { error: "Subdomain already taken" }
-
-  const customUsername = canCustomizeCredentials(scope.plan)
-    ? String(formData.get("username") ?? "").trim() || null
-    : null
-  const customPassword = canCustomizeCredentials(scope.plan)
-    ? String(formData.get("password") ?? "").trim() || null
-    : null
-
-  if (customUsername) {
-    const taken = await db.query.hosts.findFirst({ where: eq(hosts.username, customUsername) })
-    if (taken) return { error: "Username already taken" }
+// Verify session has access to a host (by host ownership)
+async function verifyHostAccess(hostId: number, session: NonNullable<Awaited<ReturnType<typeof getSession>>>) {
+  const host = await db.query.hosts.findFirst({ where: eq(hosts.id, hostId) })
+  if (!host) return null
+  if (host.clientId === session.id) return host
+  if (host.teamId !== null) {
+    const membership = await db.query.teamMembers.findFirst({
+      where: and(
+        eq(teamMembers.teamId, host.teamId),
+        eq(teamMembers.clientId, session.id),
+        eq(teamMembers.accepted, true),
+      ),
+    })
+    if (membership) return host
   }
-
-  const username = customUsername ?? genUsername()
-  const password = customPassword ?? genPassword()
-
-  const [inserted] = await db.insert(hosts).values({
-    clientId: scope.clientId, teamId: scope.teamId, subdomain, description, ttl,
-    token: token(), username, passwordHash: await hash(password, 10),
-  }).returning()
-
-  const base = process.env.BASE_DOMAIN ?? "novadns.io"
-  const webhookOwner = scope.teamId ?? session.id
-  dispatchWebhook(webhookOwner, "host.created", {
-    host: { id: inserted.id, subdomain: inserted.subdomain, fqdn: `${inserted.subdomain}.${base}`, ttl: inserted.ttl },
-  })
-
-  revalidatePath("/dashboard")
-  redirect("/dashboard")
+  return null
 }
 
-// ── Create (returns result — used by the sheet) ──────────────────────
-export async function addHost(formData: FormData) {
+// Verify session has access to a group
+async function verifyGroupAccess(groupId: number, session: NonNullable<Awaited<ReturnType<typeof getSession>>>) {
+  const group = await db.query.hostGroups.findFirst({ where: eq(hostGroups.id, groupId) })
+  if (!group) return null
+  if (group.clientId === session.id) return group
+  if (group.teamId !== null) {
+    const membership = await db.query.teamMembers.findFirst({
+      where: and(
+        eq(teamMembers.teamId, group.teamId),
+        eq(teamMembers.clientId, session.id),
+        eq(teamMembers.accepted, true),
+      ),
+    })
+    if (membership) return group
+  }
+  return null
+}
+
+// ── Create (redirect variant — used by the /hosts/new page) ─────────
+export async function createHost(slug: string, formData: FormData) {
   const session = await getSession()
   if (!session) redirect("/login")
 
-  const scope   = await getOwnerScope(session)
-  const limited = await checkPlanLimit(scope, scope.plan)
+  const workspace = await getWorkspace(slug, session)
+  const scope     = workspaceToScope(workspace)
+  const limited   = await checkPlanLimit(scope, workspace.plan)
   if (limited) return limited
 
   const subdomain   = slugify(String(formData.get("subdomain") ?? ""))
@@ -125,10 +119,10 @@ export async function addHost(formData: FormData) {
   const exists = await db.query.hosts.findFirst({ where: eq(hosts.subdomain, subdomain) })
   if (exists) return { error: "Subdomain already taken" }
 
-  const customUsername = canCustomizeCredentials(scope.plan)
+  const customUsername = canCustomizeCredentials(workspace.plan)
     ? String(formData.get("username") ?? "").trim() || null
     : null
-  const customPassword = canCustomizeCredentials(scope.plan)
+  const customPassword = canCustomizeCredentials(workspace.plan)
     ? String(formData.get("password") ?? "").trim() || null
     : null
 
@@ -151,7 +145,56 @@ export async function addHost(formData: FormData) {
     host: { id: inserted.id, subdomain: inserted.subdomain, fqdn: `${inserted.subdomain}.${base}`, ttl: inserted.ttl },
   })
 
-  revalidatePath("/dashboard")
+  revalidatePath(`/${slug}`)
+  redirect(`/${slug}`)
+}
+
+// ── Create (returns result — used by the sheet) ──────────────────────
+export async function addHost(slug: string, formData: FormData) {
+  const session = await getSession()
+  if (!session) redirect("/login")
+
+  const workspace = await getWorkspace(slug, session)
+  const scope     = workspaceToScope(workspace)
+  const limited   = await checkPlanLimit(scope, workspace.plan)
+  if (limited) return limited
+
+  const subdomain   = slugify(String(formData.get("subdomain") ?? ""))
+  const description = String(formData.get("description") ?? "").trim() || null
+  const ttl         = Math.max(30, Math.min(86400, Number(formData.get("ttl")) || 60))
+
+  if (!subdomain) return { error: "Invalid subdomain" }
+
+  const exists = await db.query.hosts.findFirst({ where: eq(hosts.subdomain, subdomain) })
+  if (exists) return { error: "Subdomain already taken" }
+
+  const customUsername = canCustomizeCredentials(workspace.plan)
+    ? String(formData.get("username") ?? "").trim() || null
+    : null
+  const customPassword = canCustomizeCredentials(workspace.plan)
+    ? String(formData.get("password") ?? "").trim() || null
+    : null
+
+  if (customUsername) {
+    const taken = await db.query.hosts.findFirst({ where: eq(hosts.username, customUsername) })
+    if (taken) return { error: "Username already taken" }
+  }
+
+  const username = customUsername ?? genUsername()
+  const password = customPassword ?? genPassword()
+
+  const [inserted] = await db.insert(hosts).values({
+    clientId: scope.clientId, teamId: scope.teamId, subdomain, description, ttl,
+    token: token(), username, passwordHash: await hash(password, 10),
+  }).returning()
+
+  const base = process.env.BASE_DOMAIN ?? "novadns.io"
+  const webhookOwner = scope.teamId ?? session.id
+  dispatchWebhook(webhookOwner, "host.created", {
+    host: { id: inserted.id, subdomain: inserted.subdomain, fqdn: `${inserted.subdomain}.${base}`, ttl: inserted.ttl },
+  })
+
+  revalidatePath(`/${slug}`)
   return { ok: true, username, password }
 }
 
@@ -160,10 +203,7 @@ export async function updateHost(id: number, formData: FormData) {
   const session = await getSession()
   if (!session) redirect("/login")
 
-  const scope = await getOwnerScope(session)
-  const host = await db.query.hosts.findFirst({
-    where: and(eq(hosts.id, id), hostScope(scope)),
-  })
+  const host = await verifyHostAccess(id, session)
   if (!host) return { error: "Not found" }
 
   const description = String(formData.get("description") ?? "").trim() || null
@@ -174,14 +214,13 @@ export async function updateHost(id: number, formData: FormData) {
 
   if (active !== host.active) {
     const base = process.env.BASE_DOMAIN ?? "novadns.io"
-    dispatchWebhook(session.id, "host.status_changed", {
+    const webhookOwner = host.teamId ?? session.id
+    dispatchWebhook(webhookOwner, "host.status_changed", {
       host: { id: host.id, subdomain: host.subdomain, fqdn: `${host.subdomain}.${base}`, ttl },
       active,
     })
   }
 
-  revalidatePath(`/dashboard/hosts/${id}`)
-  revalidatePath("/dashboard")
   return { ok: true }
 }
 
@@ -190,13 +229,13 @@ export async function regenerateToken(id: number) {
   const session = await getSession()
   if (!session) redirect("/login")
 
-  const scope = await getOwnerScope(session)
+  const host = await verifyHostAccess(id, session)
+  if (!host) return
+
   await db
     .update(hosts)
     .set({ token: token(), updatedAt: new Date() })
-    .where(and(eq(hosts.id, id), hostScope(scope)))
-
-  revalidatePath(`/dashboard/hosts/${id}`)
+    .where(eq(hosts.id, id))
 }
 
 // ── Regenerate password ─────────────────────────────────────────────
@@ -204,19 +243,17 @@ export async function regenerateHostPassword(id: number) {
   const session = await getSession()
   if (!session) redirect("/login")
 
-  const scope = await getOwnerScope(session)
-  const host = await db.query.hosts.findFirst({ where: and(eq(hosts.id, id), hostScope(scope)) })
+  const host = await verifyHostAccess(id, session)
   if (!host) return { error: "Not found" }
 
   const password = genPassword()
-  const username = host.username ?? genUsername() // generate username if somehow missing
+  const username = host.username ?? genUsername()
 
   await db
     .update(hosts)
     .set({ username, passwordHash: await hash(password, 10), updatedAt: new Date() })
     .where(eq(hosts.id, id))
 
-  revalidatePath(`/dashboard/hosts/${id}`)
   return { username, password }
 }
 
@@ -225,8 +262,16 @@ export async function setHostCredentials(id: number, username: string, password:
   const session = await getSession()
   if (!session) redirect("/login")
 
-  const scope = await getOwnerScope(session)
-  if (!canCustomizeCredentials(scope.plan)) return { error: "plan_limit" }
+  const host = await verifyHostAccess(id, session)
+  if (!host) return { error: "Not found" }
+
+  // Determine plan for this host
+  let plan = session.plan
+  if (host.teamId !== null) {
+    const team = await db.query.teams.findFirst({ where: eq(teams.id, host.teamId) })
+    if (team) plan = team.plan
+  }
+  if (!canCustomizeCredentials(plan)) return { error: "plan_limit" }
 
   username = username.trim()
   password = password.trim()
@@ -235,9 +280,6 @@ export async function setHostCredentials(id: number, username: string, password:
   if (username.length > 32) return { error: "Username too long (max 32 chars)" }
   if (!/^[a-zA-Z0-9_-]+$/.test(username)) return { error: "Username may only contain letters, numbers, _ and -" }
   if (password.length < 6) return { error: "Password must be at least 6 characters" }
-
-  const host = await db.query.hosts.findFirst({ where: and(eq(hosts.id, id), hostScope(scope)) })
-  if (!host) return { error: "Not found" }
 
   if (username !== host.username) {
     const taken = await db.query.hosts.findFirst({ where: eq(hosts.username, username) })
@@ -249,35 +291,29 @@ export async function setHostCredentials(id: number, username: string, password:
     .set({ username, passwordHash: await hash(password, 10), updatedAt: new Date() })
     .where(eq(hosts.id, id))
 
-  revalidatePath(`/dashboard/hosts/${id}`)
   return { ok: true }
 }
 
 // ── Delete (redirect variant — used by the detail page) ─────────────
-export async function deleteHost(id: number) {
+export async function deleteHost(slug: string, id: number) {
   const session = await getSession()
   if (!session) redirect("/login")
 
-  const scope = await getOwnerScope(session)
-  const host = await db.query.hosts.findFirst({
-    where: and(eq(hosts.id, id), hostScope(scope)),
-  })
+  const host = await verifyHostAccess(id, session)
 
   if (host) {
     const base = process.env.BASE_DOMAIN ?? "novadns.io"
-    const webhookOwner = scope.teamId ?? session.id
+    const webhookOwner = host.teamId ?? session.id
     dispatchWebhook(webhookOwner, "host.deleted", {
       host: { id: host.id, subdomain: host.subdomain, fqdn: `${host.subdomain}.${base}`, ttl: host.ttl },
     })
+    await db.delete(hosts).where(eq(hosts.id, id))
+    if (host.ipv4) await deleteDnsRecord(host.subdomain, "A",    host.ipv4, host.ttl)
+    if (host.ipv6) await deleteDnsRecord(host.subdomain, "AAAA", host.ipv6, host.ttl)
   }
 
-  await db.delete(hosts).where(and(eq(hosts.id, id), hostScope(scope)))
-
-  if (host?.ipv4) await deleteDnsRecord(host.subdomain, "A",    host.ipv4, host.ttl)
-  if (host?.ipv6) await deleteDnsRecord(host.subdomain, "AAAA", host.ipv6, host.ttl)
-
-  revalidatePath("/dashboard")
-  redirect("/dashboard")
+  revalidatePath(`/${slug}`)
+  redirect(`/${slug}`)
 }
 
 // ── Delete (returns result — used by the sheet) ──────────────────────
@@ -285,34 +321,98 @@ export async function removeHost(id: number) {
   const session = await getSession()
   if (!session) redirect("/login")
 
-  const scope = await getOwnerScope(session)
-  const host = await db.query.hosts.findFirst({
-    where: and(eq(hosts.id, id), hostScope(scope)),
-  })
+  const host = await verifyHostAccess(id, session)
 
   if (host) {
     const base = process.env.BASE_DOMAIN ?? "novadns.io"
-    const webhookOwner = scope.teamId ?? session.id
+    const webhookOwner = host.teamId ?? session.id
     dispatchWebhook(webhookOwner, "host.deleted", {
       host: { id: host.id, subdomain: host.subdomain, fqdn: `${host.subdomain}.${base}`, ttl: host.ttl },
     })
+    await db.delete(hosts).where(eq(hosts.id, id))
+    if (host.ipv4) await deleteDnsRecord(host.subdomain, "A",    host.ipv4, host.ttl)
+    if (host.ipv6) await deleteDnsRecord(host.subdomain, "AAAA", host.ipv6, host.ttl)
   }
 
-  await db.delete(hosts).where(and(eq(hosts.id, id), hostScope(scope)))
+  return { ok: true }
+}
 
-  if (host?.ipv4) await deleteDnsRecord(host.subdomain, "A",    host.ipv4, host.ttl)
-  if (host?.ipv6) await deleteDnsRecord(host.subdomain, "AAAA", host.ipv6, host.ttl)
+// ── Transfer host between workspaces ────────────────────────────────
+export async function transferHost(hostId: number, destinationTeamId: number | null) {
+  const session = await getSession()
+  if (!session) redirect("/login")
 
-  revalidatePath("/dashboard")
+  // Load host
+  const host = await db.query.hosts.findFirst({ where: eq(hosts.id, hostId) })
+  if (!host) return { error: "Host not found" }
+
+  // Verify source ownership
+  if (host.teamId !== null) {
+    const member = await db.query.teamMembers.findFirst({
+      where: and(
+        eq(teamMembers.teamId, host.teamId),
+        eq(teamMembers.clientId, session.id),
+        eq(teamMembers.accepted, true),
+      ),
+    })
+    if (!member || (member.role !== "owner" && member.role !== "admin")) {
+      return { error: "Insufficient permissions" }
+    }
+  } else if (host.clientId !== session.id) {
+    return { error: "Host not found" }
+  }
+
+  // Check destination access and capacity (only active hosts count toward the limit)
+  if (destinationTeamId !== null) {
+    const member = await db.query.teamMembers.findFirst({
+      where: and(
+        eq(teamMembers.teamId, destinationTeamId),
+        eq(teamMembers.clientId, session.id),
+        eq(teamMembers.accepted, true),
+      ),
+    })
+    if (!member || (member.role !== "owner" && member.role !== "admin")) {
+      return { error: "No access to destination team" }
+    }
+    const destTeam = await db.query.teams.findFirst({ where: eq(teams.id, destinationTeamId) })
+    if (!destTeam) return { error: "Destination team not found" }
+
+    if (host.active) {
+      const [{ value: activeCount }] = await db.select({ value: count() })
+        .from(hosts).where(and(eq(hosts.teamId, destinationTeamId), eq(hosts.active, true)))
+      const destLimit = isPaidPlan(destTeam.plan) ? getPlanLimit(destTeam.plan) : 0
+      if (activeCount >= destLimit) {
+        return { error: `${destTeam.name} has reached its host limit` }
+      }
+    }
+
+    await db.update(hosts)
+      .set({ teamId: destinationTeamId, clientId: null, groupId: null, updatedAt: new Date() })
+      .where(eq(hosts.id, hostId))
+  } else {
+    if (host.active) {
+      const [{ value: activeCount }] = await db.select({ value: count() })
+        .from(hosts).where(and(eq(hosts.clientId, session.id), isNull(hosts.teamId), eq(hosts.active, true)))
+      if (activeCount >= getPlanLimit(session.plan)) {
+        return { error: "Personal workspace has reached its host limit" }
+      }
+    }
+
+    await db.update(hosts)
+      .set({ clientId: session.id, teamId: null, groupId: null, updatedAt: new Date() })
+      .where(eq(hosts.id, hostId))
+  }
+
   return { ok: true }
 }
 
 // ── Fetch helpers (used by server components) ───────────────────────
-export async function getHosts() {
+export async function getHosts(slug: string) {
   const session = await getSession()
   if (!session) redirect("/login")
 
-  const scope = await getOwnerScope(session)
+  const workspace = await getWorkspace(slug, session)
+  const scope = workspaceToScope(workspace)
   return db.query.hosts.findMany({
     where: hostScope(scope),
     orderBy: (h, { desc }) => [desc(h.createdAt)],
@@ -323,20 +423,14 @@ export async function getHost(id: number) {
   const session = await getSession()
   if (!session) redirect("/login")
 
-  const scope = await getOwnerScope(session)
-  return db.query.hosts.findFirst({
-    where: and(eq(hosts.id, id), hostScope(scope)),
-  })
+  return verifyHostAccess(id, session)
 }
 
 export async function getUpdateLog(hostId: number) {
   const session = await getSession()
   if (!session) redirect("/login")
 
-  const scope = await getOwnerScope(session)
-  const host = await db.query.hosts.findFirst({
-    where: and(eq(hosts.id, hostId), hostScope(scope)),
-  })
+  const host = await verifyHostAccess(hostId, session)
   if (!host) return []
 
   return db.query.updateLog.findMany({
@@ -348,12 +442,13 @@ export async function getUpdateLog(hostId: number) {
 
 // ── Group actions ────────────────────────────────────────────────
 
-export async function addGroup(formData: FormData) {
+export async function addGroup(slug: string, formData: FormData) {
   const session = await getSession()
   if (!session) redirect("/login")
 
-  const scope = await getOwnerScope(session)
-  if (!canCustomizeCredentials(scope.plan)) return { error: "plan_limit" }
+  const workspace = await getWorkspace(slug, session)
+  const scope = workspaceToScope(workspace)
+  if (!canCustomizeCredentials(workspace.plan)) return { error: "plan_limit" }
 
   const name        = String(formData.get("name") ?? "").trim()
   const description = String(formData.get("description") ?? "").trim() || null
@@ -380,7 +475,7 @@ export async function addGroup(formData: FormData) {
     username, passwordHash: await hash(password, 10),
   })
 
-  revalidatePath("/dashboard/groups")
+  revalidatePath(`/${slug}/groups`)
   return { ok: true, username, password }
 }
 
@@ -388,10 +483,7 @@ export async function updateGroup(id: number, formData: FormData) {
   const session = await getSession()
   if (!session) redirect("/login")
 
-  const scope = await getOwnerScope(session)
-  const group = await db.query.hostGroups.findFirst({
-    where: and(eq(hostGroups.id, id), groupScope(scope)),
-  })
+  const group = await verifyGroupAccess(id, session)
   if (!group) return { error: "Not found" }
 
   const name        = String(formData.get("name") ?? "").trim()
@@ -403,7 +495,6 @@ export async function updateGroup(id: number, formData: FormData) {
     .set({ name, description, updatedAt: new Date() })
     .where(eq(hostGroups.id, id))
 
-  revalidatePath("/dashboard/groups")
   return { ok: true }
 }
 
@@ -411,11 +502,11 @@ export async function removeGroup(id: number) {
   const session = await getSession()
   if (!session) redirect("/login")
 
-  const scope = await getOwnerScope(session)
-  await db.delete(hostGroups)
-    .where(and(eq(hostGroups.id, id), groupScope(scope)))
+  const group = await verifyGroupAccess(id, session)
+  if (!group) return { error: "Not found" }
 
-  revalidatePath("/dashboard/groups")
+  await db.delete(hostGroups).where(eq(hostGroups.id, id))
+
   return { ok: true }
 }
 
@@ -423,8 +514,16 @@ export async function setGroupCredentials(id: number, username: string, password
   const session = await getSession()
   if (!session) redirect("/login")
 
-  const scope = await getOwnerScope(session)
-  if (!canCustomizeCredentials(scope.plan)) return { error: "plan_limit" }
+  const group = await verifyGroupAccess(id, session)
+  if (!group) return { error: "Not found" }
+
+  // Determine plan for this group
+  let plan = session.plan
+  if (group.teamId !== null) {
+    const team = await db.query.teams.findFirst({ where: eq(teams.id, group.teamId) })
+    if (team) plan = team.plan
+  }
+  if (!canCustomizeCredentials(plan)) return { error: "plan_limit" }
 
   username = username.trim()
   password = password.trim()
@@ -433,9 +532,6 @@ export async function setGroupCredentials(id: number, username: string, password
   if (username.length > 32) return { error: "Username too long (max 32 chars)" }
   if (!/^[a-zA-Z0-9_-]+$/.test(username)) return { error: "Username may only contain letters, numbers, _ and -" }
   if (password.length < 6) return { error: "Password must be at least 6 characters" }
-
-  const group = await db.query.hostGroups.findFirst({ where: and(eq(hostGroups.id, id), groupScope(scope)) })
-  if (!group) return { error: "Not found" }
 
   if (username !== group.username) {
     const taken = await db.query.hostGroups.findFirst({ where: eq(hostGroups.username, username) })
@@ -447,7 +543,6 @@ export async function setGroupCredentials(id: number, username: string, password
     .set({ username, passwordHash: await hash(password, 10), updatedAt: new Date() })
     .where(eq(hostGroups.id, id))
 
-  revalidatePath("/dashboard/groups")
   return { ok: true }
 }
 
@@ -455,24 +550,31 @@ export async function regenerateGroupPassword(id: number) {
   const session = await getSession()
   if (!session) redirect("/login")
 
-  const scope = await getOwnerScope(session)
-  if (!canCustomizeCredentials(scope.plan)) return { error: "plan_limit" }
+  const group = await verifyGroupAccess(id, session)
+  if (!group) return { error: "Not found" }
+
+  let plan = session.plan
+  if (group.teamId !== null) {
+    const team = await db.query.teams.findFirst({ where: eq(teams.id, group.teamId) })
+    if (team) plan = team.plan
+  }
+  if (!canCustomizeCredentials(plan)) return { error: "plan_limit" }
 
   const password = genPassword()
 
   await db.update(hostGroups)
     .set({ passwordHash: await hash(password, 10), updatedAt: new Date() })
-    .where(and(eq(hostGroups.id, id), groupScope(scope)))
+    .where(eq(hostGroups.id, id))
 
-  revalidatePath("/dashboard/groups")
   return { password }
 }
 
-export async function getGroups() {
+export async function getGroups(slug: string) {
   const session = await getSession()
   if (!session) redirect("/login")
 
-  const scope = await getOwnerScope(session)
+  const workspace = await getWorkspace(slug, session)
+  const scope = workspaceToScope(workspace)
   const groups = await db.query.hostGroups.findMany({
     where: groupScope(scope),
     orderBy: (g, { desc }) => [desc(g.createdAt)],
@@ -493,12 +595,10 @@ export async function getGroupHosts(groupId: number) {
   const session = await getSession()
   if (!session) redirect("/login")
 
-  const scope = await getOwnerScope(session)
-  const group = await db.query.hostGroups.findFirst({
-    where: and(eq(hostGroups.id, groupId), groupScope(scope)),
-  })
+  const group = await verifyGroupAccess(groupId, session)
   if (!group) return []
 
+  const scope = { teamId: group.teamId, clientId: group.clientId }
   return db.query.hosts.findMany({
     where: and(eq(hosts.groupId, groupId), hostScope(scope)),
     orderBy: (h, { asc }) => [asc(h.subdomain)],
@@ -509,26 +609,22 @@ export async function assignHostToGroup(hostId: number, groupId: number | null) 
   const session = await getSession()
   if (!session) redirect("/login")
 
-  const scope = await getOwnerScope(session)
-
-  const host = await db.query.hosts.findFirst({
-    where: and(eq(hosts.id, hostId), hostScope(scope)),
-  })
+  const host = await verifyHostAccess(hostId, session)
   if (!host) return { error: "Host not found" }
 
   if (groupId !== null) {
-    const group = await db.query.hostGroups.findFirst({
-      where: and(eq(hostGroups.id, groupId), groupScope(scope)),
-    })
+    const group = await verifyGroupAccess(groupId, session)
     if (!group) return { error: "Group not found" }
+    // Ensure they belong to the same workspace
+    if (host.teamId !== group.teamId || host.clientId !== group.clientId) {
+      return { error: "Host and group must be in the same workspace" }
+    }
   }
 
   await db.update(hosts)
     .set({ groupId, updatedAt: new Date() })
     .where(eq(hosts.id, hostId))
 
-  revalidatePath("/dashboard")
-  revalidatePath("/dashboard/groups")
   return { ok: true }
 }
 
@@ -601,7 +697,6 @@ export async function addWebhook(formData: FormData) {
     clientId: session.id, url, events, secret,
   })
 
-  revalidatePath("/dashboard/webhooks")
   return { ok: true, secret }
 }
 
@@ -625,7 +720,6 @@ export async function updateWebhook(id: number, formData: FormData) {
     .set({ url, events, active, updatedAt: new Date() })
     .where(eq(webhooks.id, id))
 
-  revalidatePath("/dashboard/webhooks")
   return { ok: true }
 }
 
@@ -636,7 +730,6 @@ export async function removeWebhook(id: number) {
   await db.delete(webhooks)
     .where(and(eq(webhooks.id, id), eq(webhooks.clientId, session.id)))
 
-  revalidatePath("/dashboard/webhooks")
   return { ok: true }
 }
 
@@ -650,7 +743,6 @@ export async function regenerateWebhookSecret(id: number) {
     .set({ secret, updatedAt: new Date() })
     .where(and(eq(webhooks.id, id), eq(webhooks.clientId, session.id)))
 
-  revalidatePath("/dashboard/webhooks")
   return { secret }
 }
 
@@ -665,7 +757,6 @@ export async function unlinkMicrosoft() {
     .set({ microsoftId: null, updatedAt: new Date() })
     .where(eq(clients.id, session.id))
 
-  revalidatePath("/dashboard/settings")
   return { ok: true }
 }
 
@@ -680,7 +771,6 @@ export async function unlinkGoogle() {
     .set({ googleId: null, updatedAt: new Date() })
     .where(eq(clients.id, session.id))
 
-  revalidatePath("/dashboard/settings")
   return { ok: true }
 }
 
@@ -708,4 +798,23 @@ export async function resetPassword(formData: FormData) {
     .where(eq(clients.id, client.id))
 
   return { ok: true }
+}
+
+// ── Slug management ──────────────────────────────────────────────
+
+export async function updateClientSlug(newSlug: string) {
+  const session = await getSession()
+  if (!session) redirect("/login")
+
+  if (!isValidSlug(newSlug)) return { error: "Invalid slug — must be 3-39 characters, lowercase letters, numbers, and hyphens only" }
+
+  // Check uniqueness (excluding current client)
+  const slug = await findAvailableSlug(newSlug, session.id)
+  if (slug !== newSlug) return { error: "That username is already taken" }
+
+  await db.update(clients)
+    .set({ slug: newSlug, updatedAt: new Date() })
+    .where(eq(clients.id, session.id))
+
+  redirect(`/${newSlug}/settings`)
 }

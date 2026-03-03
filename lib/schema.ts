@@ -10,6 +10,7 @@ export const clients = pgTable("clients", {
   email:                 varchar("email", { length: 254 }).notNull().unique(),
   passwordHash:          varchar("password_hash", { length: 255 }),           // null for Google-only accounts
   name:                  varchar("name", { length: 100 }).notNull(),
+  slug:                  varchar("slug", { length: 39 }).unique(),
   plan:                  varchar("plan", { length: 20 }).notNull().default("free"), // "free" | "starter" | "pro" | "business" | "enterprise"
   active:                boolean("active").notNull().default(true),
   resetToken:            varchar("reset_token", { length: 64 }),
@@ -18,6 +19,9 @@ export const clients = pgTable("clients", {
   microsoftId:           varchar("microsoft_id",            { length: 255 }).unique(),
   paddleCustomerId:      varchar("paddle_customer_id",     { length: 255 }),
   paddleSubscriptionId:  varchar("paddle_subscription_id", { length: 255 }),
+  totpSecret:            varchar("totp_secret",            { length: 64  }),
+  mfaEnabled:            boolean("mfa_enabled").default(false).notNull(),
+  mfaBackupCodes:        text("mfa_backup_codes").array(),
   createdAt:             timestamp("created_at").notNull().defaultNow(),
   updatedAt:             timestamp("updated_at").notNull().defaultNow(),
 })
@@ -26,11 +30,14 @@ export const clients = pgTable("clients", {
 // Teams — shared workspaces
 // ------------------------------------------------------------------
 export const teams = pgTable("teams", {
-  id:        serial("id").primaryKey(),
-  name:      varchar("name", { length: 100 }).notNull(),
-  plan:      varchar("plan", { length: 20 }).notNull().default("free"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  id:                   serial("id").primaryKey(),
+  name:                 varchar("name", { length: 100 }).notNull(),
+  slug:                 varchar("slug", { length: 39 }).unique(),
+  plan:                 varchar("plan", { length: 20 }).notNull().default("free"),
+  paddleCustomerId:     varchar("paddle_customer_id",     { length: 255 }),
+  paddleSubscriptionId: varchar("paddle_subscription_id", { length: 255 }),
+  createdAt:            timestamp("created_at").notNull().defaultNow(),
+  updatedAt:            timestamp("updated_at").notNull().defaultNow(),
 })
 
 export const teamMembers = pgTable("team_members", {
