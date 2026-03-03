@@ -31,11 +31,6 @@ function Cell({ value }: { value: FeatureValue }) {
   return <span className="text-xs text-foreground">{value}</span>
 }
 
-export const metadata = {
-  title: "NovaDNS vs All Competitors | Compare DDNS Services",
-  description: "Side-by-side comparison of NovaDNS against No-IP, DynDNS, Duck DNS, Dynu, and FreeDNS.",
-}
-
 export default function CompareAllPage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
