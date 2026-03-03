@@ -37,22 +37,55 @@ function LoginForm() {
   const [challengeToken, setChallengeToken] = useState(mfaToken)
   const [useBackup,      setUseBackup]      = useState(false)
 
-  const [error,   setError]   = useState(oauthError ? "Google sign-in failed. Please try again." : "")
-  const [showPw,  setShowPw]  = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [error,    setError]    = useState(oauthError ? "Google sign-in failed. Please try again." : "")
+  const [showPw,   setShowPw]   = useState(false)
+  const [loading,  setLoading]  = useState(false)
+  const [wakingUp, setWakingUp] = useState(false)
+
+  async function fetchWithWakeup(url: string, body: string): Promise<Response> {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 10_000)
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+          signal: controller.signal,
+        })
+        clearTimeout(timeout)
+        return res
+      } catch (err) {
+        clearTimeout(timeout)
+        if (attempt === 0 && (err instanceof DOMException && err.name === "AbortError")) {
+          setWakingUp(true)
+          await new Promise(r => setTimeout(r, 500))
+          continue
+        }
+        throw err
+      }
+    }
+    throw new Error("Request failed")
+  }
 
   async function handlePasswordSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError("")
+    setWakingUp(false)
     setLoading(true)
 
     const fd = new FormData(e.currentTarget)
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: fd.get("email"), password: fd.get("password") }),
-    })
+    let res: Response
+    try {
+      res = await fetchWithWakeup("/api/auth/login", JSON.stringify({ email: fd.get("email"), password: fd.get("password") }))
+    } catch {
+      setError("Could not reach the server. Please try again.")
+      setLoading(false)
+      setWakingUp(false)
+      return
+    }
 
+    setWakingUp(false)
     const data = await res.json()
 
     if (res.ok) {
@@ -72,17 +105,23 @@ function LoginForm() {
   async function handleMfaSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError("")
+    setWakingUp(false)
     setLoading(true)
 
     const fd = new FormData(e.currentTarget)
     const code = (fd.get("code") as string ?? "").trim()
 
-    const res = await fetch("/api/auth/mfa/verify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ challengeToken, code }),
-    })
+    let res: Response
+    try {
+      res = await fetchWithWakeup("/api/auth/mfa/verify", JSON.stringify({ challengeToken, code }))
+    } catch {
+      setError("Could not reach the server. Please try again.")
+      setLoading(false)
+      setWakingUp(false)
+      return
+    }
 
+    setWakingUp(false)
     const data = await res.json()
     if (res.ok) {
       router.push(`/${data.slug}`)
@@ -136,7 +175,7 @@ function LoginForm() {
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Verifying…" : "Continue"}
+            {wakingUp ? "Waking up database…" : loading ? "Verifying…" : "Continue"}
           </Button>
 
           <button
@@ -194,7 +233,7 @@ function LoginForm() {
         )}
         {error && <p className="text-sm text-destructive">{error}</p>}
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Signing in…" : "Sign in"}
+          {wakingUp ? "Waking up database…" : loading ? "Signing in…" : "Sign in"}
         </Button>
 
         <div className="relative">

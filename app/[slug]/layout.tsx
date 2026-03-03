@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { hosts } from "@/lib/schema"
 import { resolveWorkspace, getUserWorkspaces } from "@/lib/workspace"
+import { isPaidPlan } from "@/lib/plans"
 import { DashboardShell } from "@/components/sidebar"
 
 export default async function WorkspaceLayout({
@@ -46,6 +47,16 @@ export default async function WorkspaceLayout({
       workspaces={userWorkspaces}
       sidebarOpen={sidebarOpen}
     >
+      {workspace.type === "team" && !isPaidPlan(workspace.plan) && (
+        <div className="flex items-center gap-3 border border-yellow-300 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950/40 px-4 py-2.5 -mt-2 mb-2">
+          <p className="text-sm text-yellow-800 dark:text-yellow-300">
+            This team doesn&apos;t have an active subscription — hosts cannot be added until a plan is selected.
+            {workspace.role === "owner" && (
+              <> <a href={`/${slug}/settings`} className="font-medium underline underline-offset-2">Subscribe now</a>.</>
+            )}
+          </p>
+        </div>
+      )}
       {children}
     </DashboardShell>
   )
