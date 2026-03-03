@@ -47,9 +47,11 @@ interface AppSidebarProps {
   email: string
   userName: string
   personalSlug: string
+  activeCount: number
+  planLimit: number
 }
 
-export function AppSidebar({ slug, workspace, workspaces, email, userName, personalSlug }: AppSidebarProps) {
+export function AppSidebar({ slug, workspace, workspaces, email, userName, personalSlug, activeCount, planLimit }: AppSidebarProps) {
   const pathname = usePathname()
 
   const navItems = workspace.type === "personal"
@@ -83,11 +85,17 @@ export function AppSidebar({ slug, workspace, workspaces, email, userName, perso
         <SidebarMenu className="px-2">
           {navItems.map(({ href, label, icon, exact }) => {
             const active = exact ? pathname === href : pathname.startsWith(href)
+            const isHosts = exact && href === `/${slug}`
             return (
               <SidebarMenuItem key={href}>
                 <SidebarMenuButton render={<Link href={href} />} isActive={active} tooltip={label}>
                   <HugeiconsIcon icon={icon} strokeWidth={2} />
                   <span>{label}</span>
+                  {isHosts && planLimit > 0 && (
+                    <span className="ml-auto text-xs tabular-nums text-muted-foreground group-data-[collapsible=icon]:hidden">
+                      {activeCount}/{planLimit}
+                    </span>
+                  )}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             )
@@ -136,9 +144,9 @@ export function DashboardShell({
   children: React.ReactNode
 }) {
   const plan = workspace.plan
-  const limit     = getPlanLimit(plan)
+  const limit     = (workspace.type === "team" && !isPaidPlan(plan)) ? 0 : getPlanLimit(plan)
   const atLimit   = activeCount >= limit
-  const nearLimit = activeCount >= limit - 1
+  const nearLimit = limit > 0 && activeCount >= limit - 1
 
   // The personal workspace is always the first one with type "personal"
   const personalWs = workspaces.find(ws => ws.type === "personal")
@@ -154,6 +162,8 @@ export function DashboardShell({
         email={email}
         userName={userName}
         personalSlug={personalSlug}
+        activeCount={activeCount}
+        planLimit={limit}
       />
       <div className="flex flex-1 flex-col min-w-0">
         <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
