@@ -22,11 +22,13 @@ const ALL_EVENTS = [
 
 interface Props {
   webhook: Webhook | null
+  slug: string
+  canManage: boolean
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-export function ManageWebhookSheet({ webhook, open, onOpenChange }: Props) {
+export function ManageWebhookSheet({ webhook, slug, canManage, open, onOpenChange }: Props) {
   const router = useRouter()
   const [saveError,     setSaveError]     = useState("")
   const [saveSuccess,   setSaveSuccess]   = useState("")
@@ -47,7 +49,7 @@ export function ManageWebhookSheet({ webhook, open, onOpenChange }: Props) {
     e.preventDefault()
     if (!webhook) return
     setSaveError(""); setSaveSuccess(""); setSaving(true)
-    const result = await updateWebhook(webhook.id, new FormData(e.currentTarget))
+    const result = await updateWebhook(webhook.id, slug, new FormData(e.currentTarget))
     if (result?.error) setSaveError(result.error)
     else { setSaveSuccess("Saved"); router.refresh() }
     setSaving(false)
@@ -56,7 +58,7 @@ export function ManageWebhookSheet({ webhook, open, onOpenChange }: Props) {
   async function handleRegenSecret() {
     if (!webhook) return
     setRegenLoading(true)
-    const result = await regenerateWebhookSecret(webhook.id)
+    const result = await regenerateWebhookSecret(webhook.id, slug)
     setNewSecret(result.secret)
     setRegenLoading(false)
   }
@@ -64,7 +66,7 @@ export function ManageWebhookSheet({ webhook, open, onOpenChange }: Props) {
   async function handleDelete() {
     if (!webhook) return
     setDeleting(true)
-    await removeWebhook(webhook.id)
+    await removeWebhook(webhook.id, slug)
     onOpenChange(false)
     router.refresh()
   }
@@ -83,6 +85,11 @@ export function ManageWebhookSheet({ webhook, open, onOpenChange }: Props) {
 
         <div className="px-6 pb-6 space-y-6">
           {/* ── Settings form ────────────────────────────────── */}
+          {!canManage && (
+            <p className="text-xs text-muted-foreground border border-border px-3 py-2">
+              You need admin or owner permissions to edit webhooks.
+            </p>
+          )}
           <form onSubmit={handleSave} autoComplete="off">
             <FieldGroup>
               <Field>
@@ -93,7 +100,7 @@ export function ManageWebhookSheet({ webhook, open, onOpenChange }: Props) {
                   type="url"
                   defaultValue={webhook.url}
                   required
-                  disabled={saving}
+                  disabled={saving || !canManage}
                 />
               </Field>
               <Field>
@@ -105,7 +112,7 @@ export function ManageWebhookSheet({ webhook, open, onOpenChange }: Props) {
                         name="events"
                         value={ev.value}
                         defaultChecked={selectedEvents.has(ev.value)}
-                        disabled={saving}
+                        disabled={saving || !canManage}
                       />
                       <span className="text-sm">{ev.label}</span>
                       <code className="text-xs text-muted-foreground font-mono">{ev.value}</code>
@@ -120,16 +127,18 @@ export function ManageWebhookSheet({ webhook, open, onOpenChange }: Props) {
                   name="active"
                   value="true"
                   defaultChecked={webhook.active}
-                  disabled={saving}
+                  disabled={saving || !canManage}
                 />
               </Field>
               {saveError   && <p className="text-sm text-destructive">{saveError}</p>}
               {saveSuccess && <p className="text-sm text-green-600 dark:text-green-400">{saveSuccess}</p>}
-              <Field orientation="horizontal">
-                <Button type="submit" disabled={saving}>
-                  {saving ? "Saving…" : "Save changes"}
-                </Button>
-              </Field>
+              {canManage && (
+                <Field orientation="horizontal">
+                  <Button type="submit" disabled={saving}>
+                    {saving ? "Saving…" : "Save changes"}
+                  </Button>
+                </Field>
+              )}
             </FieldGroup>
           </form>
 
@@ -160,47 +169,51 @@ export function ManageWebhookSheet({ webhook, open, onOpenChange }: Props) {
                 Copy this secret now — it won&apos;t be shown again.
               </p>
             )}
-            <Button variant="outline" size="sm" onClick={handleRegenSecret} disabled={regenLoading}>
-              {regenLoading ? "Regenerating…" : "Regenerate secret"}
-            </Button>
-          </div>
-
-          <Separator />
-
-          {/* ── Danger zone ──────────────────────────────────── */}
-          <div className="space-y-3">
-            <p className="text-xs font-mono uppercase tracking-wide text-destructive">Danger zone</p>
-            {confirmDelete ? (
-              <div className="border border-destructive/30 bg-destructive/5 p-3 space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Type <span className="font-medium text-foreground">delete</span> to confirm removing this webhook.
-                </p>
-                <Input
-                  placeholder="delete"
-                  value={confirmInput}
-                  onChange={e => setConfirmInput(e.target.value)}
-                  className="h-8 text-sm"
-                />
-                <div className="flex gap-2">
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleDelete}
-                    disabled={deleting || confirmInput !== "delete"}
-                  >
-                    {deleting ? "Deleting…" : "Yes, delete"}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => { setConfirmDelete(false); setConfirmInput("") }}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <Button variant="destructive" size="sm" onClick={() => setConfirmDelete(true)}>
-                Delete webhook
+            {canManage && (
+              <Button variant="outline" size="sm" onClick={handleRegenSecret} disabled={regenLoading}>
+                {regenLoading ? "Regenerating…" : "Regenerate secret"}
               </Button>
             )}
           </div>
+
+          {canManage && <Separator />}
+
+          {/* ── Danger zone ──────────────────────────────────── */}
+          {canManage && (
+            <div className="space-y-3">
+              <p className="text-xs font-mono uppercase tracking-wide text-destructive">Danger zone</p>
+              {confirmDelete ? (
+                <div className="border border-destructive/30 bg-destructive/5 p-3 space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Type <span className="font-medium text-foreground">delete</span> to confirm removing this webhook.
+                  </p>
+                  <Input
+                    placeholder="delete"
+                    value={confirmInput}
+                    onChange={e => setConfirmInput(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleDelete}
+                      disabled={deleting || confirmInput !== "delete"}
+                    >
+                      {deleting ? "Deleting…" : "Yes, delete"}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => { setConfirmDelete(false); setConfirmInput("") }}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button variant="destructive" size="sm" onClick={() => setConfirmDelete(true)}>
+                  Delete webhook
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>

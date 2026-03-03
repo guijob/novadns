@@ -16,20 +16,17 @@ export default async function WebhooksPage({
   const workspace = await resolveWorkspace(slug, session.id)
   if (!workspace) redirect("/login")
 
-  // Webhooks are personal-only; redirect team workspaces
-  if (workspace.type === "team") {
-    redirect(`/${slug}`)
-  }
+  const webhooksList = await getWebhooks(slug)
 
-  const webhooks = await getWebhooks()
-
-  const total  = webhooks.length
-  const active = webhooks.filter(w => w.active).length
+  const total  = webhooksList.length
+  const active = webhooksList.filter(w => w.active).length
 
   const stats = [
     { label: "Total webhooks", value: total  },
     { label: "Active",         value: active },
   ]
+
+  const canManage = workspace.type === "personal" || workspace.role !== "member"
 
   return (
     <div className="space-y-6">
@@ -49,7 +46,7 @@ export default async function WebhooksPage({
         ))}
       </div>
 
-      <WebhooksTable webhooks={webhooks} />
+      <WebhooksTable slug={slug} webhooks={webhooksList} canManage={canManage} />
     </div>
   )
 }

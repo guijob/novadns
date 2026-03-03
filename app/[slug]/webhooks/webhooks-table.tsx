@@ -23,7 +23,7 @@ const ALL_EVENTS = [
   { value: "host.status_changed", label: "Status Changed" },
 ]
 
-export function WebhooksTable({ webhooks: initialWebhooks }: { webhooks: Webhook[] }) {
+export function WebhooksTable({ slug, webhooks: initialWebhooks, canManage }: { slug: string; webhooks: Webhook[]; canManage: boolean }) {
   const router = useRouter()
   const [webhooks,      setWebhooks]      = useState(initialWebhooks)
   const [query,         setQuery]         = useState("")
@@ -43,7 +43,7 @@ export function WebhooksTable({ webhooks: initialWebhooks }: { webhooks: Webhook
   async function handleAdd(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(""); setLoading(true)
-    const result = await addWebhook(new FormData(e.currentTarget))
+    const result = await addWebhook(slug, new FormData(e.currentTarget))
     if ("error" in result && result.error) {
       setError(result.error)
       setLoading(false)
@@ -80,10 +80,12 @@ export function WebhooksTable({ webhooks: initialWebhooks }: { webhooks: Webhook
             className="pl-8"
           />
         </div>
-        <Button onClick={() => { setError(""); setOpen(true) }}>
-          <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
-          Add webhook
-        </Button>
+        {canManage && (
+          <Button onClick={() => { setError(""); setOpen(true) }}>
+            <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
+            Add webhook
+          </Button>
+        )}
       </div>
 
       {/* ── Table ───────────────────────────────────────────────── */}
@@ -115,10 +117,12 @@ export function WebhooksTable({ webhooks: initialWebhooks }: { webhooks: Webhook
                       <>
                         <p className="text-sm font-medium">No webhooks yet</p>
                         <p className="text-xs text-muted-foreground">Register an endpoint to receive events when hosts change.</p>
-                        <Button size="sm" className="mt-2" onClick={() => { setError(""); setOpen(true) }}>
-                          <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
-                          Add webhook
-                        </Button>
+                        {canManage && (
+                          <Button size="sm" className="mt-2" onClick={() => { setError(""); setOpen(true) }}>
+                            <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
+                            Add webhook
+                          </Button>
+                        )}
                       </>
                     )}
                   </div>
@@ -245,6 +249,8 @@ export function WebhooksTable({ webhooks: initialWebhooks }: { webhooks: Webhook
       {/* ── Manage webhook sheet ───────────────────────────────────── */}
       <ManageWebhookSheet
         webhook={manageWebhook}
+        slug={slug}
+        canManage={canManage}
         open={!!manageWebhook}
         onOpenChange={o => { if (!o) setManageWebhook(null) }}
       />

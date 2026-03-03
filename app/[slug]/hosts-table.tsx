@@ -11,6 +11,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { PlusSignIcon, Settings01Icon, CrownIcon, SearchIcon, ArrowUp01Icon, ArrowDown01Icon, ArrowUpDownIcon, CheckmarkCircle01Icon, Copy01Icon, Alert02Icon } from "@hugeicons/core-free-icons"
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 import { CopyTokenButton } from "@/components/copy-token-button"
 import { ManageHostSheet } from "@/components/manage-host-sheet"
 import type { Host, HostGroup, Team, TeamRole } from "@/lib/schema"
@@ -29,11 +30,11 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
   { key: "disabled", label: "Inactive"  },
 ]
 
-const STATUS_CONFIG: Record<StatusKind, { label: string; dot: string; text: string }> = {
-  online:   { label: "Online",     dot: "bg-green-500",           text: "text-green-700 dark:text-green-400" },
-  offline:  { label: "Offline",    dot: "bg-muted-foreground/40", text: "text-muted-foreground" },
-  never:    { label: "Never seen", dot: "bg-muted-foreground/40", text: "text-muted-foreground" },
-  disabled: { label: "Inactive",   dot: "bg-muted-foreground/25", text: "text-muted-foreground/60" },
+const STATUS_CONFIG: Record<StatusKind, { label: string; dot: string; text: string; tip: string }> = {
+  online:   { label: "Online",     dot: "bg-green-500",           text: "text-green-700 dark:text-green-400", tip: "Received an update within the last 10 minutes."                                     },
+  offline:  { label: "Offline",    dot: "bg-muted-foreground/40", text: "text-muted-foreground",              tip: "No update in the past 10 minutes. Check that your device is calling the update URL." },
+  never:    { label: "Never seen", dot: "bg-muted-foreground/40", text: "text-muted-foreground",              tip: "This host has never sent an update. Configure your device to call the update URL."   },
+  disabled: { label: "Inactive",   dot: "bg-muted-foreground/25", text: "text-muted-foreground/60",          tip: "Host is disabled. Enable it from the host settings to start receiving updates."       },
 }
 
 const STATUS_ORDER: Record<StatusKind, number> = { online: 0, offline: 1, never: 2, disabled: 3 }
@@ -290,7 +291,7 @@ export function HostsTable({ slug, hosts: initialHosts, base, plan, isTeam, grou
             ) : (
               rows.map(host => {
                 const status = getStatus(host)
-                const { label, dot, text } = STATUS_CONFIG[status]
+                const { label, dot, text, tip } = STATUS_CONFIG[status]
                 return (
                   <TableRow key={host.id} className="group">
                     <TableCell>
@@ -316,10 +317,15 @@ export function HostsTable({ slug, hosts: initialHosts, base, plan, isTeam, grou
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className={`size-1.5 rounded-full shrink-0 ${dot}`} />
-                        <span className={`text-xs ${text}`}>{label}</span>
-                      </div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger className="flex items-center gap-2 cursor-default">
+                            <span className={`size-1.5 rounded-full shrink-0 ${dot}`} />
+                            <span className={`text-xs ${text}`}>{label}</span>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">{tip}</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-0.5">

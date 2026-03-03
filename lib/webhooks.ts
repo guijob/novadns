@@ -4,13 +4,15 @@ import { webhooks } from "./schema"
 import { eq, and } from "drizzle-orm"
 
 export async function dispatchWebhook(
-  clientId: number,
+  owner: { clientId: number } | { teamId: number },
   event: string,
   payload: Record<string, unknown>,
 ) {
-  const rows = await db.query.webhooks.findMany({
-    where: and(eq(webhooks.clientId, clientId), eq(webhooks.active, true)),
-  })
+  const condition = "teamId" in owner
+    ? and(eq(webhooks.teamId, owner.teamId), eq(webhooks.active, true))
+    : and(eq(webhooks.clientId, owner.clientId), eq(webhooks.active, true))
+
+  const rows = await db.query.webhooks.findMany({ where: condition })
   const targets = rows.filter(w => w.events.split(",").includes(event))
   if (!targets.length) return
 

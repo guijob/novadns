@@ -63,6 +63,7 @@ export function AppSidebar({ slug, workspace, workspaces, email, userName, perso
     : [
         { href: `/${slug}`,           label: "Hosts",    icon: ListViewIcon,      exact: true  },
         { href: `/${slug}/groups`,    label: "Groups",   icon: FolderLibraryIcon, exact: false },
+        { href: `/${slug}/webhooks`,  label: "Webhooks", icon: WebhookIcon,       exact: false },
         { href: `/${slug}/team`,      label: "Team",     icon: UserGroupIcon,     exact: false },
       ]
 

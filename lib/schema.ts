@@ -103,11 +103,12 @@ export const updateLog = pgTable("update_log", {
 })
 
 // ------------------------------------------------------------------
-// Webhooks — per-client HTTP callbacks for DNS events
+// Webhooks — per-client or per-team HTTP callbacks for DNS events
 // ------------------------------------------------------------------
 export const webhooks = pgTable("webhooks", {
   id:        serial("id").primaryKey(),
-  clientId:  integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  clientId:  integer("client_id").references(() => clients.id, { onDelete: "cascade" }), // null for team webhooks
+  teamId:    integer("team_id").references(() => teams.id,   { onDelete: "cascade" }), // null for personal webhooks
   url:       varchar("url", { length: 2048 }).notNull(),
   events:    varchar("events", { length: 255 }).notNull(), // comma-separated
   secret:    varchar("secret", { length: 64 }).notNull(),  // HMAC-SHA256 signing key

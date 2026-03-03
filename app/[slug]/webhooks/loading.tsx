@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 export default function Loading() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pointer-events-none">
       <div className="flex items-center justify-between">
         <div className="space-y-1.5">
           <Skeleton className="h-6 w-24" />

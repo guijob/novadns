@@ -140,7 +140,7 @@ export async function createHost(slug: string, formData: FormData) {
   }).returning()
 
   const base = process.env.BASE_DOMAIN ?? "novadns.io"
-  const webhookOwner = scope.teamId ?? session.id
+  const webhookOwner = scope.teamId !== null ? { teamId: scope.teamId } : { clientId: session.id }
   dispatchWebhook(webhookOwner, "host.created", {
     host: { id: inserted.id, subdomain: inserted.subdomain, fqdn: `${inserted.subdomain}.${base}`, ttl: inserted.ttl },
   })
@@ -189,7 +189,7 @@ export async function addHost(slug: string, formData: FormData) {
   }).returning()
 
   const base = process.env.BASE_DOMAIN ?? "novadns.io"
-  const webhookOwner = scope.teamId ?? session.id
+  const webhookOwner = scope.teamId !== null ? { teamId: scope.teamId } : { clientId: session.id }
   dispatchWebhook(webhookOwner, "host.created", {
     host: { id: inserted.id, subdomain: inserted.subdomain, fqdn: `${inserted.subdomain}.${base}`, ttl: inserted.ttl },
   })
@@ -214,7 +214,7 @@ export async function updateHost(id: number, formData: FormData) {
 
   if (active !== host.active) {
     const base = process.env.BASE_DOMAIN ?? "novadns.io"
-    const webhookOwner = host.teamId ?? session.id
+    const webhookOwner = host.teamId !== null ? { teamId: host.teamId } : { clientId: session.id }
     dispatchWebhook(webhookOwner, "host.status_changed", {
       host: { id: host.id, subdomain: host.subdomain, fqdn: `${host.subdomain}.${base}`, ttl },
       active,
@@ -303,7 +303,7 @@ export async function deleteHost(slug: string, id: number) {
 
   if (host) {
     const base = process.env.BASE_DOMAIN ?? "novadns.io"
-    const webhookOwner = host.teamId ?? session.id
+    const webhookOwner = host.teamId !== null ? { teamId: host.teamId } : { clientId: session.id }
     dispatchWebhook(webhookOwner, "host.deleted", {
       host: { id: host.id, subdomain: host.subdomain, fqdn: `${host.subdomain}.${base}`, ttl: host.ttl },
     })
@@ -325,7 +325,7 @@ export async function removeHost(id: number) {
 
   if (host) {
     const base = process.env.BASE_DOMAIN ?? "novadns.io"
-    const webhookOwner = host.teamId ?? session.id
+    const webhookOwner = host.teamId !== null ? { teamId: host.teamId } : { clientId: session.id }
     dispatchWebhook(webhookOwner, "host.deleted", {
       host: { id: host.id, subdomain: host.subdomain, fqdn: `${host.subdomain}.${base}`, ttl: host.ttl },
     })
@@ -671,19 +671,42 @@ export async function requestPasswordReset(formData: FormData) {
 
 // ── Webhook actions ──────────────────────────────────────────────
 
-export async function getWebhooks() {
+async function webhookScope(workspace: WorkspaceContext) {
+  return workspace.type === "team"
+    ? and(eq(webhooks.teamId, workspace.teamId))
+    : and(eq(webhooks.clientId, workspace.clientId))
+}
+
+async function ownedWebhook(id: number, workspace: WorkspaceContext) {
+  const condition = workspace.type === "team"
+    ? and(eq(webhooks.id, id), eq(webhooks.teamId, workspace.teamId))
+    : and(eq(webhooks.id, id), eq(webhooks.clientId, workspace.clientId))
+  return db.query.webhooks.findFirst({ where: condition })
+}
+
+export async function getWebhooks(slug: string) {
   const session = await getSession()
   if (!session) redirect("/login")
 
+  const workspace = await resolveWorkspace(slug, session.id)
+  if (!workspace) redirect("/login")
+
   return db.query.webhooks.findMany({
-    where: eq(webhooks.clientId, session.id),
+    where: await webhookScope(workspace),
     orderBy: (w, { desc }) => [desc(w.createdAt)],
   })
 }
 
-export async function addWebhook(formData: FormData) {
+export async function addWebhook(slug: string, formData: FormData) {
   const session = await getSession()
   if (!session) redirect("/login")
+
+  const workspace = await resolveWorkspace(slug, session.id)
+  if (!workspace) redirect("/login")
+
+  if (workspace.type === "team" && workspace.role === "member") {
+    return { error: "Only admins can manage webhooks" }
+  }
 
   const url    = String(formData.get("url") ?? "").trim()
   const events = formData.getAll("events").join(",")
@@ -692,21 +715,27 @@ export async function addWebhook(formData: FormData) {
   if (!events) return { error: "Select at least one event" }
 
   const secret = token()
+  const values = workspace.type === "team"
+    ? { teamId: workspace.teamId, url, events, secret }
+    : { clientId: workspace.clientId, url, events, secret }
 
-  await db.insert(webhooks).values({
-    clientId: session.id, url, events, secret,
-  })
+  await db.insert(webhooks).values(values)
 
   return { ok: true, secret }
 }
 
-export async function updateWebhook(id: number, formData: FormData) {
+export async function updateWebhook(id: number, slug: string, formData: FormData) {
   const session = await getSession()
   if (!session) redirect("/login")
 
-  const webhook = await db.query.webhooks.findFirst({
-    where: and(eq(webhooks.id, id), eq(webhooks.clientId, session.id)),
-  })
+  const workspace = await resolveWorkspace(slug, session.id)
+  if (!workspace) redirect("/login")
+
+  if (workspace.type === "team" && workspace.role === "member") {
+    return { error: "Only admins can manage webhooks" }
+  }
+
+  const webhook = await ownedWebhook(id, workspace)
   if (!webhook) return { error: "Not found" }
 
   const url    = String(formData.get("url") ?? "").trim()
@@ -723,25 +752,45 @@ export async function updateWebhook(id: number, formData: FormData) {
   return { ok: true }
 }
 
-export async function removeWebhook(id: number) {
+export async function removeWebhook(id: number, slug: string) {
   const session = await getSession()
   if (!session) redirect("/login")
 
+  const workspace = await resolveWorkspace(slug, session.id)
+  if (!workspace) redirect("/login")
+
+  if (workspace.type === "team" && workspace.role === "member") {
+    return { error: "Only admins can manage webhooks" }
+  }
+
   await db.delete(webhooks)
-    .where(and(eq(webhooks.id, id), eq(webhooks.clientId, session.id)))
+    .where(workspace.type === "team"
+      ? and(eq(webhooks.id, id), eq(webhooks.teamId, workspace.teamId))
+      : and(eq(webhooks.id, id), eq(webhooks.clientId, workspace.clientId))
+    )
 
   return { ok: true }
 }
 
-export async function regenerateWebhookSecret(id: number) {
+export async function regenerateWebhookSecret(id: number, slug: string) {
   const session = await getSession()
   if (!session) redirect("/login")
+
+  const workspace = await resolveWorkspace(slug, session.id)
+  if (!workspace) redirect("/login")
+
+  if (workspace.type === "team" && workspace.role === "member") {
+    return { secret: null, error: "Only admins can manage webhooks" }
+  }
+
+  const webhook = await ownedWebhook(id, workspace)
+  if (!webhook) return { secret: null, error: "Not found" }
 
   const secret = token()
 
   await db.update(webhooks)
     .set({ secret, updatedAt: new Date() })
-    .where(and(eq(webhooks.id, id), eq(webhooks.clientId, session.id)))
+    .where(eq(webhooks.id, id))
 
   return { secret }
 }
