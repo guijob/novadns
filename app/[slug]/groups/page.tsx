@@ -19,7 +19,7 @@ export default async function GroupsPage({
   const workspace = await resolveWorkspace(slug, session.id)
   if (!workspace) redirect("/login")
 
-  const base = process.env.BASE_DOMAIN ?? "novadns.io"
+  const base = process.env.BASE_DOMAIN ?? "novaip.link"
   const plan = workspace.plan
 
   if (!canCustomizeCredentials(plan)) {

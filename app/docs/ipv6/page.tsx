@@ -101,7 +101,7 @@ export default function IPv6Page() {
         <CodeBlock filename="curl" label="IPv6 prefix — DynDNS compat">
           {c.prompt("$ ")}{c.kw("curl")}{c.plain(" \\\n")
           }{c.plain("  ")}{c.str('"https://')}{c.url("email%40example.com")}{c.str(":")}{c.url("TOKEN")}{c.str("@novadns.io/nic/update")}{c.plain("\n")
-          }{c.plain("    ")}{c.flag("?hostname=")}{c.str("home.novadns.io")}{c.plain("\n")
+          }{c.plain("    ")}{c.flag("?hostname=")}{c.str("home.novaip.link")}{c.plain("\n")
           }{c.plain("    ")}{c.flag("&myip=")}{c.str("2001:db8:1234::/48")}{c.str('"')}{"\n"}
           {"\n"}
           {c.out("good 2001:db8:1234::/48")}
@@ -125,7 +125,7 @@ export default function IPv6Page() {
             { step: "1", text: "ISP assigns /48 prefix 2001:db8:1234::/48 to your router" },
             { step: "2", text: "Your router calls the NovaDNS update endpoint with that CIDR" },
             { step: "3", text: "NovaDNS stores 2001:db8:1234::/48 as the AAAA value" },
-            { step: "4", text: "Devices resolve home.novadns.io, read the prefix, and construct their address" },
+            { step: "4", text: "Devices resolve home.novaip.link, read the prefix, and construct their address" },
           ].map(({ step, text }) => (
             <div key={step} className="flex items-start gap-4 px-4 py-3">
               <span className="text-xs font-mono text-primary font-bold shrink-0 mt-0.5">{step}</span>

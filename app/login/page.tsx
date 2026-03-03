@@ -156,6 +156,7 @@ function LoginForm() {
                 autoFocus
                 autoComplete="off"
                 required
+                disabled={loading}
               />
             ) : (
               <Input
@@ -168,6 +169,7 @@ function LoginForm() {
                 autoFocus
                 autoComplete="one-time-code"
                 required
+                disabled={loading}
               />
             )}
           </Field>
@@ -182,6 +184,7 @@ function LoginForm() {
             type="button"
             className="text-xs text-muted-foreground hover:text-foreground transition-colors text-center"
             onClick={() => { setUseBackup(v => !v); setError("") }}
+            disabled={loading}
           >
             {useBackup ? "Use authenticator code instead" : "Use a backup code"}
           </button>
@@ -192,6 +195,7 @@ function LoginForm() {
               type="button"
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => { setPhase("password"); setError(""); setUseBackup(false) }}
+              disabled={loading}
             >
               <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={1.5} className="size-3.5" />
               Back
@@ -207,7 +211,7 @@ function LoginForm() {
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input id="email" name="email" type="email" placeholder="you@example.com" required autoFocus />
+          <Input id="email" name="email" type="email" placeholder="you@example.com" required autoFocus disabled={loading} />
         </Field>
         <Field>
           <div className="flex items-center justify-between">
@@ -217,12 +221,13 @@ function LoginForm() {
             </Link>
           </div>
           <div className="relative">
-              <Input id="password" name="password" type={showPw ? "text" : "password"} placeholder="••••••••" required className="pr-9" />
+              <Input id="password" name="password" type={showPw ? "text" : "password"} placeholder="••••••••" required className="pr-9" disabled={loading} />
               <button
                 type="button"
                 onClick={() => setShowPw(v => !v)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 tabIndex={-1}
+                disabled={loading}
               >
                 <HugeiconsIcon icon={showPw ? ViewOffIcon : ViewIcon} strokeWidth={1.5} className="size-4" />
               </button>

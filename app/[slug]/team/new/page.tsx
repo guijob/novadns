@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { CrownIcon } from "@hugeicons/core-free-icons"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { createTeam } from "@/lib/team-actions"
 
 export default function NewTeamPage() {
@@ -29,44 +30,46 @@ export default function NewTeamPage() {
   }
 
   return (
-    <div className="max-w-md space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Create a team</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Teams let you share hosts and groups with collaborators.
-        </p>
-      </div>
+    <Dialog open onOpenChange={() => router.back()}>
+      <DialogContent showCloseButton className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-base">Create a team</DialogTitle>
+          <DialogDescription>
+            Teams let you share hosts and groups with collaborators.
+          </DialogDescription>
+        </DialogHeader>
 
-      <div className="flex gap-3 border border-border px-4 py-3 bg-muted/30">
-        <HugeiconsIcon icon={CrownIcon} strokeWidth={1.5} className="size-4 text-primary shrink-0 mt-0.5" />
-        <p className="text-sm text-muted-foreground">
-          Teams require a paid plan to add hosts. You can create the team now and subscribe from the team&apos;s Settings page.
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="name">Team name</Label>
-          <Input
-            id="name"
-            name="name"
-            placeholder="Acme Corp"
-            required
-            autoFocus
-          />
+        <div className="flex gap-3 border border-border px-4 py-3 bg-muted/30">
+          <HugeiconsIcon icon={CrownIcon} strokeWidth={1.5} className="size-4 text-primary shrink-0 mt-0.5" />
+          <p className="text-sm text-muted-foreground">
+            Teams require a paid plan to add hosts. You can create the team now and subscribe from the team&apos;s Settings page.
+          </p>
         </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        <form id="new-team-form" onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="name">Team name</Label>
+            <Input
+              id="name"
+              name="name"
+              placeholder="Acme Corp"
+              required
+              autoFocus
+              disabled={pending}
+            />
+          </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+        </form>
 
-        <div className="flex gap-2">
-          <Button type="submit" disabled={pending}>
-            {pending ? "Creating…" : "Create team"}
-          </Button>
+        <DialogFooter>
           <Button type="button" variant="outline" onClick={() => router.back()} disabled={pending}>
             Cancel
           </Button>
-        </div>
-      </form>
-    </div>
+          <Button type="submit" form="new-team-form" disabled={pending}>
+            {pending ? "Creating…" : "Create team"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

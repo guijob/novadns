@@ -10,7 +10,7 @@ const { Packet } = DNS
 const sql = neon(process.env.DATABASE_URL!)
 const db  = drizzle(sql, { schema })
 
-const BASE_DOMAIN = process.env.BASE_DOMAIN ?? "novadns.io"
+const BASE_DOMAIN = process.env.BASE_DOMAIN ?? "novaip.link"
 
 // Build a reverse map: numeric type -> string name (e.g. 1 -> "A")
 const TYPE_BY_NUMBER: Record<number, string> = Object.fromEntries(

@@ -95,7 +95,7 @@ export default function ApiPage() {
             <CodeBlock filename="curl" label="basic auth — DynDNS compat">
               {c.prompt("$ ")}{c.kw("curl")}{c.plain(" \\\n")
               }{c.plain("  ")}{c.str('"https://')}{c.url("email%40example.com")}{c.str(":")}{c.url("YOUR_TOKEN")}{c.str("@novadns.io/nic/update")}{c.plain(" \\\n")
-              }{c.plain("  ")}{c.flag("?hostname=")}{c.str("home.novadns.io")}{c.flag("&myip=")}{c.str("203.0.113.42")}{c.str('"')}
+              }{c.plain("  ")}{c.flag("?hostname=")}{c.str("home.novaip.link")}{c.flag("&myip=")}{c.str("203.0.113.42")}{c.str('"')}
             </CodeBlock>
           </div>
         </div>
@@ -121,7 +121,7 @@ export default function ApiPage() {
             {
               param:    "hostname",
               required: false,
-              desc:     "The full hostname to update (e.g. home.novadns.io). Required for /nic/update.",
+              desc:     "The full hostname to update (e.g. home.novaip.link). Required for /nic/update.",
             },
             {
               param:    "myip",

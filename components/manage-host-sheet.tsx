@@ -214,10 +214,10 @@ export function ManageHostSheet({ host, base, plan, groups, userTeams, open, onO
                     <FieldLabel>Status</FieldLabel>
                     <div className="flex gap-4">
                       <label className="flex items-center gap-2 text-sm cursor-pointer">
-                        <input type="radio" name="active" value="true"  defaultChecked={host.active}  /> Active
+                        <input type="radio" name="active" value="true"  defaultChecked={host.active}  disabled={saving} /> Active
                       </label>
                       <label className="flex items-center gap-2 text-sm cursor-pointer">
-                        <input type="radio" name="active" value="false" defaultChecked={!host.active} /> Disabled
+                        <input type="radio" name="active" value="false" defaultChecked={!host.active} disabled={saving} /> Disabled
                       </label>
                     </div>
                   </Field>
@@ -349,7 +349,8 @@ export function ManageHostSheet({ host, base, plan, groups, userTeams, open, onO
                     <select
                       value={transferDest}
                       onChange={e => { setTransferDest(e.target.value); setConfirmTransfer(false); setTransferError("") }}
-                      className="flex h-9 w-full border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      disabled={transferring}
+                      className="flex h-9 w-full border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <option value="">Select destination…</option>
                       {transferDestinations.map(d => (
@@ -374,7 +375,7 @@ export function ManageHostSheet({ host, base, plan, groups, userTeams, open, onO
                           <Button size="sm" onClick={handleTransfer} disabled={transferring}>
                             {transferring ? "Transferring…" : "Confirm transfer"}
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => setConfirmTransfer(false)}>
+                          <Button variant="outline" size="sm" onClick={() => setConfirmTransfer(false)} disabled={transferring}>
                             Cancel
                           </Button>
                         </div>

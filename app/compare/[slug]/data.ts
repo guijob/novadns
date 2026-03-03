@@ -235,7 +235,7 @@ export const competitors: Competitor[] = [
     sections: [
       {
         title: "Community domains vs dedicated hostnames",
-        body:  "FreeDNS operates on shared domains — you pick a subdomain under one of hundreds of community-owned domains (like mooo.com, afraid.org, etc.). This is free and flexible, but the domain names are not professional-looking and can be claimed by anyone. NovaDNS hosts are always under novadns.io, a clean dedicated domain.",
+        body:  "FreeDNS operates on shared domains — you pick a subdomain under one of hundreds of community-owned domains (like mooo.com, afraid.org, etc.). This is free and flexible, but the domain names are not professional-looking and can be claimed by anyone. NovaDNS hosts are always under novaip.link, a clean dedicated domain.",
       },
       {
         title: "Interface and learning curve",

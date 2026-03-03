@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
   const caller = callerIp(req)
   if (!await rateLimit(`rl:ip:${caller}`, 30, 60)) return res("abuse", 429)
 
-  const base = process.env.BASE_DOMAIN ?? "novadns.io"
+  const base = process.env.BASE_DOMAIN ?? "novaip.link"
 
   // ── Resolve target hosts ─────────────────────────────────────────
   let targets: ResolvedHost[]

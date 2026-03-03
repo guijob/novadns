@@ -64,7 +64,7 @@ export default function ForgotPasswordPage() {
                 <FieldGroup>
                   <Field>
                     <FieldLabel htmlFor="email">Email</FieldLabel>
-                    <Input id="email" name="email" type="email" placeholder="you@example.com" required autoFocus />
+                    <Input id="email" name="email" type="email" placeholder="you@example.com" required autoFocus disabled={loading} />
                   </Field>
                   {error && <p className="text-sm text-destructive">{error}</p>}
                   <Button type="submit" className="w-full" disabled={loading}>

@@ -71,7 +71,7 @@ export default function GettingStartedPage() {
             </Link>
             , click <strong className="text-foreground font-medium">Add host</strong>. Choose a subdomain —
             for example, <InlineCode>home</InlineCode> — and your host will be reachable at{" "}
-            <InlineCode>home.novadns.io</InlineCode>.
+            <InlineCode>home.novaip.link</InlineCode>.
           </p>
           <p className="text-sm text-muted-foreground leading-relaxed">
             After creation, copy the <strong className="text-foreground font-medium">update token</strong> from

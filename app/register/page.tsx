@@ -144,19 +144,19 @@ export default function RegisterPage() {
               <FieldGroup>
                 <Field>
                   <FieldLabel htmlFor="name">Name</FieldLabel>
-                  <Input id="name" name="name" placeholder="Jane Smith" required autoFocus />
+                  <Input id="name" name="name" placeholder="Jane Smith" required autoFocus disabled={loading} />
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="email">Email</FieldLabel>
-                  <Input id="email" name="email" type="email" placeholder="you@example.com" required />
+                  <Input id="email" name="email" type="email" placeholder="you@example.com" required disabled={loading} />
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <Input id="password" name="password" type="password" placeholder="Min. 8 characters" required minLength={8} />
+                  <Input id="password" name="password" type="password" placeholder="Min. 8 characters" required minLength={8} disabled={loading} />
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="confirm">Confirm password</FieldLabel>
-                  <Input id="confirm" name="confirm" type="password" placeholder="••••••••" required />
+                  <Input id="confirm" name="confirm" type="password" placeholder="••••••••" required disabled={loading} />
                 </Field>
 
                 {error && (

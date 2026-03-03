@@ -35,7 +35,7 @@ export default function ClientsPage() {
         <h1 className="text-2xl font-bold tracking-tight mb-2">Client Setup</h1>
         <p className="text-sm text-muted-foreground leading-relaxed">
           Copy-paste configurations for the most common DDNS clients and devices.
-          All examples use <InlineCode>home.novadns.io</InlineCode> as the hostname —
+          All examples use <InlineCode>home.novaip.link</InlineCode> as the hostname —
           replace it with your own subdomain.
         </p>
       </div>
@@ -102,7 +102,7 @@ export default function ClientsPage() {
           {c.key("ssl")}{c.plain("=")}{c.str("yes")}{"\n"}
           {c.key("daemon")}{c.plain("=")}{c.str("300")}{c.plain("   ")}{c.dim("# check every 5 minutes")}{"\n"}
           {"\n"}
-          {c.str("home.novadns.io")}
+          {c.str("home.novaip.link")}
         </CodeBlock>
 
         <p className="text-sm text-muted-foreground leading-relaxed mt-2">
@@ -132,7 +132,7 @@ export default function ClientsPage() {
           {c.plain("  ")}{c.key("server-url")}{c.plain("  = ")}{c.str('"/nic/update?hostname=%h&myip=%i"')}{"\n"}
           {c.plain("  ")}{c.key("username")}{c.plain("    = ")}{c.str("your@email.com")}{"\n"}
           {c.plain("  ")}{c.key("password")}{c.plain("    = ")}{c.str("YOUR_HOST_TOKEN")}{"\n"}
-          {c.plain("  ")}{c.key("hostname")}{c.plain("    = ")}{c.str("home.novadns.io")}{"\n"}
+          {c.plain("  ")}{c.key("hostname")}{c.plain("    = ")}{c.str("home.novaip.link")}{"\n"}
           {c.plain("}")}
         </CodeBlock>
 
@@ -154,7 +154,7 @@ export default function ClientsPage() {
           {[
             { field: "Service / Provider", value: "DynDNS  (or Custom)" },
             { field: "Server",             value: "novadns.io"          },
-            { field: "Hostname",           value: "home.novadns.io"     },
+            { field: "Hostname",           value: "home.novaip.link"     },
             { field: "Username",           value: "your@email.com"      },
             { field: "Password",           value: "YOUR_HOST_TOKEN"     },
           ].map(({ field, value }) => (

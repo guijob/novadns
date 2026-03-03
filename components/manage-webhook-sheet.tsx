@@ -192,6 +192,7 @@ export function ManageWebhookSheet({ webhook, slug, canManage, open, onOpenChang
                     value={confirmInput}
                     onChange={e => setConfirmInput(e.target.value)}
                     className="h-8 text-sm"
+                    disabled={deleting}
                   />
                   <div className="flex gap-2">
                     <Button

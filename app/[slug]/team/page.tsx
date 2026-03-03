@@ -44,6 +44,7 @@ export default async function TeamPage({
       currentUserRole={workspace.role}
       ownerEmail={session.email}
       priceIds={priceIds}
+      personalSlug={session.slug ?? ""}
     />
   )
 }

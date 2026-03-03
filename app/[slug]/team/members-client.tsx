@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { UserIcon, MailIcon, Delete01Icon, CrownIcon, ShieldUserIcon } from "@hugeicons/core-free-icons"
@@ -47,6 +48,7 @@ export function TeamMembersClient({
   currentUserRole,
   ownerEmail,
   priceIds,
+  personalSlug,
 }: {
   teamId: number
   teamSlug: string
@@ -56,7 +58,9 @@ export function TeamMembersClient({
   currentUserRole: TeamRole
   ownerEmail: string
   priceIds: Partial<Record<PlanKey, string>>
+  personalSlug: string
 }) {
+  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [teamName, setTeamName] = useState(team.name)
 
@@ -114,6 +118,7 @@ export function TeamMembersClient({
     startTransition(async () => {
       const res = await leaveTeam(teamId)
       if ("error" in res) toast.error(res.error)
+      else router.push(`/${personalSlug}`)
     })
   }
 
@@ -121,6 +126,7 @@ export function TeamMembersClient({
     startTransition(async () => {
       const res = await deleteTeam(teamId)
       if ("error" in res) toast.error(res.error)
+      else router.push(`/${personalSlug}`)
     })
   }
 

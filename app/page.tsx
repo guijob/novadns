@@ -276,28 +276,28 @@ export default async function LandingPage() {
             <div className="divide-y divide-border">
               {[
                 {
-                  name: "home.novadns.io",
+                  name: "home.novaip.link",
                   ipv4: "203.0.113.42",
                   ipv6: "2001:db8::1",
                   seen: "just now",
                   online: true,
                 },
                 {
-                  name: "office.novadns.io",
+                  name: "office.novaip.link",
                   ipv4: "198.51.100.7",
                   ipv6: "2001:db8:a::1",
                   seen: "2 min ago",
                   online: true,
                 },
                 {
-                  name: "vpn.novadns.io",
+                  name: "vpn.novaip.link",
                   ipv4: "192.0.2.55",
                   ipv6: "2001:db8:b::1",
                   seen: "5 min ago",
                   online: true,
                 },
                 {
-                  name: "nas.novadns.io",
+                  name: "nas.novaip.link",
                   ipv4: "203.0.113.88",
                   ipv6: null,
                   seen: "3 h ago",
@@ -332,7 +332,7 @@ export default async function LandingPage() {
 
             {/* Panel footer */}
             <div className="border-t border-border px-4 py-2.5 flex items-center justify-between bg-muted/20">
-              <span className="text-xs text-muted-foreground">novadns.io</span>
+              <span className="text-xs text-muted-foreground">novaip.link</span>
               <span className="text-xs text-muted-foreground font-mono">4 hosts · free plan</span>
             </div>
           </div>
@@ -488,7 +488,7 @@ export default async function LandingPage() {
                   <span className="text-primary">checkip.dyndns.com</span>
                 </div>
                 <div className="pt-2">
-                  <span className="text-yellow-500">home.novadns.io</span>
+                  <span className="text-yellow-500">home.novaip.link</span>
                 </div>
               </div>
             </div>

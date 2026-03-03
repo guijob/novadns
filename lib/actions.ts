@@ -139,7 +139,7 @@ export async function createHost(slug: string, formData: FormData) {
     token: token(), username, passwordHash: await hash(password, 10),
   }).returning()
 
-  const base = process.env.BASE_DOMAIN ?? "novadns.io"
+  const base = process.env.BASE_DOMAIN ?? "novaip.link"
   const webhookOwner = scope.teamId !== null ? { teamId: scope.teamId } : { clientId: session.id }
   dispatchWebhook(webhookOwner, "host.created", {
     host: { id: inserted.id, subdomain: inserted.subdomain, fqdn: `${inserted.subdomain}.${base}`, ttl: inserted.ttl },
@@ -188,7 +188,7 @@ export async function addHost(slug: string, formData: FormData) {
     token: token(), username, passwordHash: await hash(password, 10),
   }).returning()
 
-  const base = process.env.BASE_DOMAIN ?? "novadns.io"
+  const base = process.env.BASE_DOMAIN ?? "novaip.link"
   const webhookOwner = scope.teamId !== null ? { teamId: scope.teamId } : { clientId: session.id }
   dispatchWebhook(webhookOwner, "host.created", {
     host: { id: inserted.id, subdomain: inserted.subdomain, fqdn: `${inserted.subdomain}.${base}`, ttl: inserted.ttl },
@@ -213,7 +213,7 @@ export async function updateHost(id: number, formData: FormData) {
   await db.update(hosts).set({ description, ttl, active, updatedAt: new Date() }).where(eq(hosts.id, id))
 
   if (active !== host.active) {
-    const base = process.env.BASE_DOMAIN ?? "novadns.io"
+    const base = process.env.BASE_DOMAIN ?? "novaip.link"
     const webhookOwner = host.teamId !== null ? { teamId: host.teamId } : { clientId: session.id }
     dispatchWebhook(webhookOwner, "host.status_changed", {
       host: { id: host.id, subdomain: host.subdomain, fqdn: `${host.subdomain}.${base}`, ttl },
@@ -302,7 +302,7 @@ export async function deleteHost(slug: string, id: number) {
   const host = await verifyHostAccess(id, session)
 
   if (host) {
-    const base = process.env.BASE_DOMAIN ?? "novadns.io"
+    const base = process.env.BASE_DOMAIN ?? "novaip.link"
     const webhookOwner = host.teamId !== null ? { teamId: host.teamId } : { clientId: session.id }
     dispatchWebhook(webhookOwner, "host.deleted", {
       host: { id: host.id, subdomain: host.subdomain, fqdn: `${host.subdomain}.${base}`, ttl: host.ttl },
@@ -324,7 +324,7 @@ export async function removeHost(id: number) {
   const host = await verifyHostAccess(id, session)
 
   if (host) {
-    const base = process.env.BASE_DOMAIN ?? "novadns.io"
+    const base = process.env.BASE_DOMAIN ?? "novaip.link"
     const webhookOwner = host.teamId !== null ? { teamId: host.teamId } : { clientId: session.id }
     dispatchWebhook(webhookOwner, "host.deleted", {
       host: { id: host.id, subdomain: host.subdomain, fqdn: `${host.subdomain}.${base}`, ttl: host.ttl },

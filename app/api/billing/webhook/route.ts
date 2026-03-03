@@ -12,7 +12,7 @@ import {
 
 export const dynamic = "force-dynamic"
 
-const baseDomain = process.env.BASE_DOMAIN ?? "novadns.io"
+const baseDomain = process.env.BASE_DOMAIN ?? "novaip.link"
 
 type Scope = { type: "client"; id: number } | { type: "team"; id: number }
 

@@ -2,7 +2,7 @@ import { Resend } from "resend"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-function base() { return process.env.BASE_DOMAIN ?? "novadns.io" }
+function base() { return process.env.BASE_DOMAIN ?? "novaip.link" }
 function from() { return `NovaDNS <noreply@${base()}>` }
 function dashUrl(path = "") { return `https://${base()}${path}` }
 
@@ -153,7 +153,7 @@ export async function sendSubscriptionCanceledEmail(
 }
 
 export async function sendFeedbackEmail(from: string, message: string) {
-  const base = process.env.BASE_DOMAIN ?? "novadns.io"
+  const base = process.env.BASE_DOMAIN ?? "novaip.link"
 
   await resend.emails.send({
     from:    `NovaDNS Feedback <noreply@${base}>`,
@@ -172,7 +172,7 @@ export async function sendFeedbackEmail(from: string, message: string) {
 }
 
 export async function sendPasswordResetEmail(to: string, token: string) {
-  const base    = process.env.BASE_DOMAIN ?? "novadns.io"
+  const base    = process.env.BASE_DOMAIN ?? "novaip.link"
   const resetUrl = `https://${base}/reset-password?token=${token}`
 
   await resend.emails.send({

@@ -23,7 +23,7 @@ export default async function WorkspacePage({
     getHosts(slug),
     getGroups(slug).catch(() => [] as Awaited<ReturnType<typeof getGroups>>),
   ])
-  const base      = process.env.BASE_DOMAIN ?? "novadns.io"
+  const base      = process.env.BASE_DOMAIN ?? "novaip.link"
   const plan      = workspace.plan
   const userTeams = await getUserTeams(session.id)
 

@@ -6,7 +6,7 @@
  *   R53_SECRET_ACCESS_KEY
  *   R53_REGION             — use "us-east-1" (Route53 is global but the API endpoint is us-east-1)
  *   ROUTE53_HOSTED_ZONE_ID — e.g. "Z1D633PJN98FT9" (from the AWS console)
- *   BASE_DOMAIN            — e.g. "novadns.io"
+ *   BASE_DOMAIN            — e.g. "novaip.link"
  */
 
 import {
@@ -27,7 +27,7 @@ function client() {
 }
 
 function fqdn(subdomain: string) {
-  const domain = process.env.BASE_DOMAIN ?? "novadns.io"
+  const domain = process.env.BASE_DOMAIN ?? "novaip.link"
   return `${subdomain}.${domain}.` // Route53 expects trailing dot
 }
 

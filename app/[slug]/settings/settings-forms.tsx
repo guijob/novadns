@@ -348,6 +348,7 @@ export function UsernameForm({ currentSlug }: { currentSlug: string }) {
               maxLength={39}
               required
               className="h-7 text-sm font-mono"
+              disabled={pending}
             />
           </div>
         </div>
@@ -408,6 +409,7 @@ export function ProfileForm({ initialName, initialEmail }: { initialName: string
               onChange={e => setName(e.target.value)}
               required
               className="h-7 text-sm"
+              disabled={loading}
             />
           </div>
           {/* Email row */}
@@ -421,6 +423,7 @@ export function ProfileForm({ initialName, initialEmail }: { initialName: string
               onChange={e => setEmail(e.target.value)}
               required
               className="h-7 text-sm"
+              disabled={loading}
             />
           </div>
         </div>
@@ -480,6 +483,7 @@ export function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
                 placeholder="••••••••"
                 required
                 className="h-7 text-sm"
+                disabled={loading}
               />
             </div>
           )}
@@ -495,6 +499,7 @@ export function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
               required
               minLength={8}
               className="h-7 text-sm"
+              disabled={loading}
             />
           </div>
         </div>
@@ -762,6 +767,7 @@ export function MfaSection({ mfaEnabled: initialEnabled }: { mfaEnabled: boolean
                 onChange={e => setCode(e.target.value)}
                 required
                 className="h-7 text-sm font-mono"
+                disabled={loading}
               />
             </div>
             <div className="flex items-center gap-3">
@@ -842,6 +848,7 @@ export function MfaSection({ mfaEnabled: initialEnabled }: { mfaEnabled: boolean
                   onFocus={() => setStep("regen" as MfaStep)}
                   required
                   className="h-7 w-32 text-sm font-mono"
+                  disabled={loading}
                 />
                 <Button type="submit" size="sm" variant="outline" disabled={loading || step === "disable"}>
                   {loading && step !== "disable" ? "Working…" : "Regenerate codes"}
@@ -865,6 +872,7 @@ export function MfaSection({ mfaEnabled: initialEnabled }: { mfaEnabled: boolean
                 onFocus={() => setStep("disable" as MfaStep)}
                 required
                 className="h-7 w-32 text-sm font-mono"
+                disabled={loading}
               />
               <Button type="submit" size="sm" variant="outline" disabled={loading || step === "regen"}>
                 {loading && step === "disable" ? "Disabling…" : "Disable 2FA"}
