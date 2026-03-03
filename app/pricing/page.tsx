@@ -3,6 +3,7 @@
 import React, { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { MarketingFooter } from "@/components/marketing-footer"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   CheckmarkCircle02Icon,
@@ -342,22 +343,7 @@ export default function PricingPage() {
 
       </main>
 
-      {/* ── Footer ────────────────────────────────────────────────── */}
-      <footer className="border-t border-border py-6">
-        <div className="max-w-6xl mx-auto px-6 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-          {[
-            { href: "/terms",   label: "Terms"   },
-            { href: "/privacy", label: "Privacy" },
-            { href: "/cookies", label: "Cookies" },
-            { href: "/refunds", label: "Refunds" },
-          ].map(({ href, label }) => (
-            <Link key={href} href={href} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-              {label}
-            </Link>
-          ))}
-          <span className="text-xs text-muted-foreground ml-auto">© {new Date().getFullYear()} NovaDNS</span>
-        </div>
-      </footer>
+      <MarketingFooter />
 
     </div>
   )

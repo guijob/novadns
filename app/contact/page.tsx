@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { MarketingFooter } from "@/components/marketing-footer"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -219,12 +220,7 @@ export default function ContactPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border px-6 py-4 flex items-center justify-end gap-4 text-xs text-muted-foreground">
-        <Link href="/terms"   className="hover:text-foreground transition-colors">Terms</Link>
-        <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-        <Link href="/refunds" className="hover:text-foreground transition-colors">Refunds</Link>
-      </footer>
+      <MarketingFooter />
 
     </div>
   )

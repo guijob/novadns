@@ -37,6 +37,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { getSession } from "@/lib/auth"
 import { LandingFaq } from "@/components/landing-faq"
+import { MarketingFooter } from "@/components/marketing-footer"
 
 // ─── constants ──────────────────────────────────────────────────────────────
 
@@ -244,7 +245,7 @@ export default async function LandingPage() {
 
             <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-bold tracking-tight leading-[1.06] mb-5">
               Dynamic DNS<br />
-              <span className="text-primary">for the modern<br className="hidden sm:block" />infrastructure.</span>
+              <span className="text-primary">for the modern{" "}<br className="hidden sm:block" />infrastructure.</span>
             </h1>
 
             <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-8 max-w-[420px]">
@@ -629,72 +630,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ── FOOTER ──────────────────────────────────────────────────── */}
-      <footer className="py-10">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-start justify-between gap-8">
-
-          <div>
-            <Link href="/" className="flex items-center gap-2.5 mb-3">
-              <div className="size-7 bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold select-none">
-                N
-              </div>
-              <span className="font-semibold text-sm tracking-tight">NovaDNS</span>
-            </Link>
-            <p className="text-xs text-muted-foreground max-w-[200px] leading-relaxed">
-              Dynamic DNS for the modern infrastructure.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-x-12 gap-y-6 text-xs text-muted-foreground">
-            <div className="space-y-2.5">
-              <p className="font-mono uppercase tracking-wide text-foreground text-[0.65rem]">Product</p>
-              <div className="flex flex-col gap-2">
-                <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-                <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
-                <Link href="/docs" className="hover:text-foreground transition-colors">Docs</Link>
-              </div>
-            </div>
-            <div className="space-y-2.5">
-              <p className="font-mono uppercase tracking-wide text-foreground text-[0.65rem]">Account</p>
-              <div className="flex flex-col gap-2">
-                <Link href="/login" className="hover:text-foreground transition-colors">Log in</Link>
-                <Link href="/register" className="hover:text-foreground transition-colors">Register</Link>
-                <Link href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link>
-              </div>
-            </div>
-            <div className="space-y-2.5">
-              <p className="font-mono uppercase tracking-wide text-foreground text-[0.65rem]">Compare</p>
-              <div className="flex flex-col gap-2">
-                <Link href="/compare"         className="hover:text-foreground transition-colors font-medium">Compare all</Link>
-                <Link href="/compare/noip"    className="hover:text-foreground transition-colors">vs No-IP</Link>
-                <Link href="/compare/dyndns"  className="hover:text-foreground transition-colors">vs DynDNS</Link>
-                <Link href="/compare/duckdns" className="hover:text-foreground transition-colors">vs Duck DNS</Link>
-                <Link href="/compare/dynu"    className="hover:text-foreground transition-colors">vs Dynu</Link>
-                <Link href="/compare/afraid"  className="hover:text-foreground transition-colors">vs FreeDNS</Link>
-              </div>
-            </div>
-            <div className="space-y-2.5">
-              <p className="font-mono uppercase tracking-wide text-foreground text-[0.65rem]">Legal</p>
-              <div className="flex flex-col gap-2">
-                <Link href="/terms"    className="hover:text-foreground transition-colors">Terms of Service</Link>
-                <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-                <Link href="/cookies" className="hover:text-foreground transition-colors">Cookie Policy</Link>
-                <Link href="/refunds" className="hover:text-foreground transition-colors">Refund Policy</Link>
-              </div>
-            </div>
-            <div className="space-y-2.5">
-              <p className="font-mono uppercase tracking-wide text-foreground text-[0.65rem]">Company</p>
-              <div className="flex flex-col gap-2">
-                <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
-              </div>
-            </div>
-          </div>
-
-          <p className="text-xs text-muted-foreground self-end">
-            © {new Date().getFullYear()} NovaDNS
-          </p>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   )
 }
