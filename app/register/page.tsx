@@ -144,6 +144,7 @@ export default function RegisterPage() {
                 </p>
               </div>
             ) : (
+            <>
             <div className="mb-8">
               <h1 className="text-2xl font-bold tracking-tight mb-1">Create your account</h1>
               <p className="text-sm text-muted-foreground">
@@ -226,6 +227,7 @@ export default function RegisterPage() {
                 </p>
               </FieldGroup>
             </form>
+            </>
             )}
           </div>
         </div>
