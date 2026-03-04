@@ -52,7 +52,7 @@ export default async function CompareAllPage() {
         where: eq(clients.id, session.id),
         columns: { slug: true },
       })
-      dashboardSlug = client?.slug ?? session.id
+      dashboardSlug = client?.slug ?? String(session.id)
     }
   }
 

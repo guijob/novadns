@@ -180,7 +180,7 @@ export default async function LandingPage() {
         where: eq(clients.id, session.id),
         columns: { slug: true },
       })
-      dashboardSlug = client?.slug ?? session.id
+      dashboardSlug = client?.slug ?? String(session.id)
     }
   }
 
