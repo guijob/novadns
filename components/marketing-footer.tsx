@@ -4,10 +4,18 @@ const columns = [
   {
     heading: "Product",
     links: [
-      { href: "/#features",   label: "Features"      },
-      { href: "/pricing",     label: "Pricing"       },
-      { href: "/docs",        label: "Docs"          },
-      { href: "/tools/cgnat", label: "CGNAT Checker" },
+      { href: "/#features", label: "Features" },
+      { href: "/pricing",   label: "Pricing"  },
+      { href: "/docs",      label: "Docs"     },
+    ],
+  },
+  {
+    heading: "Tools",
+    links: [
+      { href: "/tools/ip-checker",    label: "What's My IP"   },
+      { href: "/tools/cgnat-checker",label: "CGNAT Checker"  },
+      { href: "/tools/port-checker", label: "Port Checker"   },
+      { href: "/tools/ipv6-checker", label: "IPv6 Test"      },
     ],
   },
   {
@@ -69,7 +77,7 @@ export function MarketingFooter() {
           </div>
 
           {/* Link columns — 2-col on mobile, auto on lg */}
-          <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-8 text-xs text-muted-foreground">
+          <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-8 text-xs text-muted-foreground">
             {columns.map(({ heading, links }) => (
               <div key={heading} className="space-y-2.5">
                 <p className="font-mono uppercase tracking-wide text-foreground text-[0.65rem]">

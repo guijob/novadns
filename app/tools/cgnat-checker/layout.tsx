@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     description:
       "Instantly check if your ISP is using Carrier-Grade NAT (CGNAT). Find out if your home server or self-hosted services can be reached from the internet.",
     type: "website",
-    url: "https://novadns.io/tools/cgnat",
+    url: "https://novadns.io/tools/cgnat-checker",
     siteName: "NovaDNS",
     images: [{ url: "https://novadns.io/opengraph-image" }],
   },
