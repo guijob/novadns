@@ -1,7 +1,7 @@
 export function Logo({ className }: { className?: string }) {
   return (
     <span className={`inline-flex items-center ${className ?? ""}`}>
-      <span className="font-semibold tracking-tight text-foreground leading-none text-[1.4rem]" aria-label="NovaDNS">
+      <span className="font-semibold tracking-tight text-foreground leading-none text-[1.4em]" aria-label="NovaDNS">
         NovaDNS
       </span>
       <svg

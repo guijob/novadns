@@ -24,7 +24,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm">
             <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
-              <Logo size="sm" />
+              <Logo className="text-sm" />
             </Link>
             <span className="text-border select-none">/</span>
             <span className="text-foreground font-medium">Docs</span>
