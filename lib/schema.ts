@@ -1,6 +1,11 @@
 import { pgTable, serial, varchar, integer, boolean, timestamp, text, pgEnum } from "drizzle-orm/pg-core"
 
 export const teamRoleEnum = pgEnum("team_role", ["owner", "admin", "member"])
+export const monitorTypeEnum = pgEnum("monitor_type", ["http", "tcp"])
+export const monitorStatusEnum = pgEnum("monitor_status", ["up", "down", "degraded", "pending"])
+export const alertStatusEnum = pgEnum("alert_status", ["active", "resolved"])
+export const alertTypeEnum = pgEnum("alert_type", ["host.down", "host.recovered", "ip.changed", "updates.stale"])
+export const alertChannelEnum = pgEnum("alert_channel", ["email", "webhook", "in_app"])
 
 // ------------------------------------------------------------------
 // Clients — SaaS customers
@@ -119,6 +124,73 @@ export const webhooks = pgTable("webhooks", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 })
 
+// ------------------------------------------------------------------
+// Monitors — per-host active monitoring config
+// ------------------------------------------------------------------
+export const monitors = pgTable("monitors", {
+  id:                serial("id").primaryKey(),
+  hostId:            integer("host_id").notNull().references(() => hosts.id, { onDelete: "cascade" }),
+  clientId:          integer("client_id").references(() => clients.id, { onDelete: "cascade" }),
+  teamId:            integer("team_id").references(() => teams.id, { onDelete: "cascade" }),
+  type:              monitorTypeEnum("type").notNull(),
+  httpUrl:           varchar("http_url", { length: 2048 }),
+  httpMethod:        varchar("http_method", { length: 10 }).default("GET"),
+  httpExpectedStatus: integer("http_expected_status").default(200),
+  tcpPort:           integer("tcp_port"),
+  intervalSeconds:   integer("interval_seconds").notNull().default(300),
+  timeoutSeconds:    integer("timeout_seconds").notNull().default(10),
+  retries:           integer("retries").notNull().default(2),
+  enabled:           boolean("enabled").notNull().default(true),
+  status:            monitorStatusEnum("status").notNull().default("pending"),
+  uptimePercent:     varchar("uptime_percent", { length: 10 }),
+  lastCheckedAt:     timestamp("last_checked_at"),
+  lastStatusChange:  timestamp("last_status_change"),
+  consecutiveFails:  integer("consecutive_fails").notNull().default(0),
+  createdAt:         timestamp("created_at").notNull().defaultNow(),
+  updatedAt:         timestamp("updated_at").notNull().defaultNow(),
+})
+
+// ------------------------------------------------------------------
+// Monitor Checks — individual check results
+// ------------------------------------------------------------------
+export const monitorChecks = pgTable("monitor_checks", {
+  id:           serial("id").primaryKey(),
+  monitorId:    integer("monitor_id").notNull().references(() => monitors.id, { onDelete: "cascade" }),
+  status:       monitorStatusEnum("status").notNull(),
+  responseTime: integer("response_time"),       // ms
+  statusCode:   integer("status_code"),
+  error:        text("error"),
+  checkedAt:    timestamp("checked_at").notNull().defaultNow(),
+})
+
+// ------------------------------------------------------------------
+// Alerts — triggered alert incidents
+// ------------------------------------------------------------------
+export const alerts = pgTable("alerts", {
+  id:         serial("id").primaryKey(),
+  monitorId:  integer("monitor_id").notNull().references(() => monitors.id, { onDelete: "cascade" }),
+  clientId:   integer("client_id").references(() => clients.id, { onDelete: "cascade" }),
+  teamId:     integer("team_id").references(() => teams.id, { onDelete: "cascade" }),
+  status:     alertStatusEnum("status").notNull().default("active"),
+  type:       alertTypeEnum("type").notNull(),
+  message:    text("message"),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt:  timestamp("created_at").notNull().defaultNow(),
+})
+
+// ------------------------------------------------------------------
+// Alert Preferences — per-workspace notification settings
+// ------------------------------------------------------------------
+export const alertPreferences = pgTable("alert_preferences", {
+  id:        serial("id").primaryKey(),
+  clientId:  integer("client_id").references(() => clients.id, { onDelete: "cascade" }),
+  teamId:    integer("team_id").references(() => teams.id, { onDelete: "cascade" }),
+  channel:   alertChannelEnum("channel").notNull(),
+  enabled:   boolean("enabled").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+})
+
 export type Client     = typeof clients.$inferSelect
 export type HostGroup  = typeof hostGroups.$inferSelect
 export type Host       = typeof hosts.$inferSelect
@@ -127,3 +199,7 @@ export type Webhook    = typeof webhooks.$inferSelect
 export type Team       = typeof teams.$inferSelect
 export type TeamMember = typeof teamMembers.$inferSelect
 export type TeamRole   = "owner" | "admin" | "member"
+export type Monitor          = typeof monitors.$inferSelect
+export type MonitorCheck     = typeof monitorChecks.$inferSelect
+export type Alert            = typeof alerts.$inferSelect
+export type AlertPreference  = typeof alertPreferences.$inferSelect

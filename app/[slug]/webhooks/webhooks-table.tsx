@@ -17,10 +17,12 @@ import { ManageWebhookSheet } from "@/components/manage-webhook-sheet"
 import type { Webhook } from "@/lib/schema"
 
 const ALL_EVENTS = [
-  { value: "host.ip_updated",    label: "IP Updated"     },
-  { value: "host.created",       label: "Host Created"   },
-  { value: "host.deleted",       label: "Host Deleted"   },
-  { value: "host.status_changed", label: "Status Changed" },
+  { value: "host.ip_updated",       label: "IP Updated"        },
+  { value: "host.created",          label: "Host Created"      },
+  { value: "host.deleted",          label: "Host Deleted"      },
+  { value: "host.status_changed",   label: "Status Changed"    },
+  { value: "monitor.host_down",     label: "Monitor: Down"     },
+  { value: "monitor.host_recovered", label: "Monitor: Recovered" },
 ]
 
 export function WebhooksTable({ slug, webhooks: initialWebhooks, canManage }: { slug: string; webhooks: Webhook[]; canManage: boolean }) {

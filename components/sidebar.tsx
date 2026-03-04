@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { ListViewIcon, CrownIcon, FolderLibraryIcon, WebhookIcon, UserGroupIcon, Settings01Icon } from "@hugeicons/core-free-icons"
+import { ListViewIcon, CrownIcon, FolderLibraryIcon, WebhookIcon, UserGroupIcon, Settings01Icon, Activity03Icon } from "@hugeicons/core-free-icons"
 import {
   Sidebar,
   SidebarContent,
@@ -25,10 +25,11 @@ import { getPlanLimit, PLANS, isPaidPlan } from "@/lib/plans"
 import type { WorkspaceContext } from "@/lib/workspace"
 
 const SECTION_LABELS: Record<string, string> = {
-  groups:   "Groups",
-  webhooks: "Webhooks",
-  team:     "Team",
-  settings: "Settings",
+  groups:     "Groups",
+  webhooks:   "Webhooks",
+  monitoring: "Monitoring",
+  team:       "Team",
+  settings:   "Settings",
 }
 
 function HeaderSection() {
@@ -56,15 +57,17 @@ export function AppSidebar({ slug, workspace, workspaces, email, userName, perso
 
   const navItems = workspace.type === "personal"
     ? [
-        { href: `/${slug}`,           label: "Hosts",    icon: ListViewIcon,      exact: true  },
-        { href: `/${slug}/groups`,    label: "Groups",   icon: FolderLibraryIcon, exact: false },
-        { href: `/${slug}/webhooks`,  label: "Webhooks", icon: WebhookIcon,       exact: false },
+        { href: `/${slug}`,             label: "Hosts",      icon: ListViewIcon,      exact: true  },
+        { href: `/${slug}/groups`,      label: "Groups",     icon: FolderLibraryIcon, exact: false },
+        { href: `/${slug}/webhooks`,    label: "Webhooks",   icon: WebhookIcon,       exact: false },
+        { href: `/${slug}/monitoring`,  label: "Monitoring", icon: Activity03Icon,    exact: false },
       ]
     : [
-        { href: `/${slug}`,           label: "Hosts",    icon: ListViewIcon,      exact: true  },
-        { href: `/${slug}/groups`,    label: "Groups",   icon: FolderLibraryIcon, exact: false },
-        { href: `/${slug}/webhooks`,  label: "Webhooks", icon: WebhookIcon,       exact: false },
-        { href: `/${slug}/team`,      label: "Team",     icon: UserGroupIcon,     exact: false },
+        { href: `/${slug}`,             label: "Hosts",      icon: ListViewIcon,      exact: true  },
+        { href: `/${slug}/groups`,      label: "Groups",     icon: FolderLibraryIcon, exact: false },
+        { href: `/${slug}/webhooks`,    label: "Webhooks",   icon: WebhookIcon,       exact: false },
+        { href: `/${slug}/monitoring`,  label: "Monitoring", icon: Activity03Icon,    exact: false },
+        { href: `/${slug}/team`,        label: "Team",       icon: UserGroupIcon,     exact: false },
       ]
 
   return (

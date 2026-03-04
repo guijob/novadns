@@ -36,6 +36,27 @@ export function getPriceId(plan: PlanKey): string {
   return id
 }
 
+// ── Monitoring limits ─────────────────────────────────────────────
+export interface MonitoringLimits {
+  activeProbing: boolean
+  minInterval: number      // seconds
+  maxMonitors: number
+  historyDays: number
+  alertChannels: string[]  // "in_app" | "email" | "webhook"
+}
+
+const MONITORING_LIMITS: Record<PlanKey, MonitoringLimits> = {
+  free:       { activeProbing: false, minInterval: 600, maxMonitors: 3,   historyDays: 1,  alertChannels: ["in_app"] },
+  starter:    { activeProbing: true,  minInterval: 300, maxMonitors: 25,  historyDays: 7,  alertChannels: ["in_app", "email"] },
+  pro:        { activeProbing: true,  minInterval: 120, maxMonitors: 100, historyDays: 30, alertChannels: ["in_app", "email", "webhook"] },
+  business:   { activeProbing: true,  minInterval: 60,  maxMonitors: 200, historyDays: 90, alertChannels: ["in_app", "email", "webhook"] },
+  enterprise: { activeProbing: true,  minInterval: 30,  maxMonitors: 500, historyDays: 90, alertChannels: ["in_app", "email", "webhook"] },
+}
+
+export function getMonitoringLimits(plan: string): MonitoringLimits {
+  return MONITORING_LIMITS[plan as PlanKey] ?? MONITORING_LIMITS.free
+}
+
 export function getPlanByPriceId(priceId: string): PlanKey | null {
   for (const [key, val] of Object.entries(PLANS)) {
     if (val.paddleEnvKey && process.env[val.paddleEnvKey] === priceId) {

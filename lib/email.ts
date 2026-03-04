@@ -271,6 +271,48 @@ export async function sendPasswordResetEmail(to: string, token: string) {
   })
 }
 
+// ── Monitor alerts ───────────────────────────────────────────────
+
+export async function sendMonitorDownEmail(to: string, name: string, hostname: string, error: string) {
+  await resend.emails.send({
+    from: from(), to,
+    subject: `Alert: ${hostname} is down`,
+    html: layout(`
+      <h1 style="font-size:20px;font-weight:700;margin:0 0 8px;color:#dc2626">Host down</h1>
+      <p style="color:#555;font-size:14px;margin:0 0 16px">
+        Hi ${name}, your host <strong style="font-family:monospace">${hostname}</strong> is not responding.
+      </p>
+      <div style="background:#fef2f2;border:1px solid #fecaca;padding:12px 16px;margin:0 0 16px">
+        <p style="font-size:13px;color:#991b1b;margin:0"><strong>Error:</strong> ${error}</p>
+      </div>
+      <p style="color:#555;font-size:14px;margin:0 0 16px">
+        We'll notify you when it comes back online.
+      </p>
+      ${btn("View monitoring", dashUrl("/dashboard"))}
+      <p style="color:#999;font-size:12px;margin:20px 0 0">
+        You can manage alert preferences in your dashboard settings.
+      </p>
+    `),
+  })
+}
+
+export async function sendMonitorRecoveredEmail(to: string, name: string, hostname: string, downtime: string) {
+  await resend.emails.send({
+    from: from(), to,
+    subject: `Recovered: ${hostname} is back up`,
+    html: layout(`
+      <h1 style="font-size:20px;font-weight:700;margin:0 0 8px;color:#16a34a">Host recovered</h1>
+      <p style="color:#555;font-size:14px;margin:0 0 16px">
+        Hi ${name}, your host <strong style="font-family:monospace">${hostname}</strong> is back online.
+      </p>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:12px 16px;margin:0 0 16px">
+        <p style="font-size:13px;color:#166534;margin:0"><strong>Downtime:</strong> ${downtime}</p>
+      </div>
+      ${btn("View monitoring", dashUrl("/dashboard"))}
+    `),
+  })
+}
+
 // ── Team invite ───────────────────────────────────────────────────────────────
 
 export async function sendTeamInviteEmail(to: string, inviterName: string, teamName: string, inviteUrl: string) {
