@@ -3,6 +3,13 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { competitors, type FeatureValue } from "./[slug]/data"
+import { getSession } from "@/lib/auth"
+import { cookies } from "next/headers"
+import { db } from "@/lib/db"
+import { clients } from "@/lib/schema"
+import { eq } from "drizzle-orm"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { ArrowRight01Icon } from "@hugeicons/core-free-icons"
 
 export const metadata: Metadata = {
   title: "NovaDNS vs Competitors — Dynamic DNS Comparison",
@@ -32,7 +39,23 @@ function Cell({ value }: { value: FeatureValue }) {
   return <span className="text-xs text-foreground">{value}</span>
 }
 
-export default function CompareAllPage() {
+export default async function CompareAllPage() {
+  const session = await getSession()
+  let dashboardSlug: string | null = null
+  if (session) {
+    const jar = await cookies()
+    const lastSlug = jar.get("last_workspace")?.value
+    if (lastSlug) {
+      dashboardSlug = lastSlug
+    } else {
+      const client = await db.query.clients.findFirst({
+        where: eq(clients.id, session.id),
+        columns: { slug: true },
+      })
+      dashboardSlug = client?.slug ?? session.id
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
 
@@ -48,12 +71,21 @@ export default function CompareAllPage() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/login" />}>
-              Log in
-            </Button>
-            <Button size="sm" nativeButton={false} render={<Link href="/register" />}>
-              Get started
-            </Button>
+            {dashboardSlug ? (
+              <Button size="sm" nativeButton={false} render={<Link href={`/${dashboardSlug}`} />}>
+                Dashboard
+                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1 size-3.5" />
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/login" />}>
+                  Log in
+                </Button>
+                <Button size="sm" nativeButton={false} render={<Link href="/register" />}>
+                  Get started
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>

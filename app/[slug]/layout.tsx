@@ -1,5 +1,5 @@
 import { cookies } from "next/headers"
-import { redirect, notFound } from "next/navigation"
+import { redirect } from "next/navigation"
 import { count, eq, and, isNull } from "drizzle-orm"
 import { getSession } from "@/lib/auth"
 import { db } from "@/lib/db"
@@ -7,6 +7,7 @@ import { hosts } from "@/lib/schema"
 import { resolveWorkspace, getUserWorkspaces } from "@/lib/workspace"
 import { isPaidPlan } from "@/lib/plans"
 import { DashboardShell } from "@/components/sidebar"
+import { WorkspaceNotFound } from "./workspace-not-found"
 
 export default async function WorkspaceLayout({
   children,
@@ -20,7 +21,11 @@ export default async function WorkspaceLayout({
   if (!session) redirect("/login")
 
   const workspace = await resolveWorkspace(slug, session.id)
-  if (!workspace) notFound()
+
+  if (!workspace) {
+    const workspaces = await getUserWorkspaces(session.id)
+    return <WorkspaceNotFound workspaces={workspaces} />
+  }
 
   // Count active hosts in this workspace
   const hostWhere =

@@ -23,6 +23,7 @@ import {
   UserIcon,
   Settings01Icon,
   LogoutIcon,
+  Home01Icon,
   Sun01Icon,
   MoonIcon,
   ComputerIcon,
@@ -67,6 +68,10 @@ export function UserMenu({ email, plan, settingsHref = "/dashboard/settings" }: 
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>
+          <DropdownMenuItem render={<Link href="/" />}>
+            <HugeiconsIcon icon={Home01Icon} strokeWidth={2} />
+            Homepage
+          </DropdownMenuItem>
           <DropdownMenuItem render={<Link href={settingsHref} />}>
             <HugeiconsIcon icon={Settings01Icon} strokeWidth={2} />
             Settings

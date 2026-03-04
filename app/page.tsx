@@ -14,7 +14,6 @@ export const metadata: Metadata = {
     images: [{ url: "https://novadns.io/opengraph-image" }],
   },
 }
-import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
 import { clients } from "@/lib/schema"
 import { eq } from "drizzle-orm"
@@ -168,20 +167,20 @@ const compatClients = [
 export default async function LandingPage() {
   const session = await getSession()
 
+  let dashboardSlug: string | null = null
   if (session) {
     const jar = await cookies()
     const lastSlug = jar.get("last_workspace")?.value
 
     if (lastSlug) {
-      redirect(`/${lastSlug}`)
+      dashboardSlug = lastSlug
+    } else {
+      const client = await db.query.clients.findFirst({
+        where: eq(clients.id, session.id),
+        columns: { slug: true },
+      })
+      dashboardSlug = client?.slug ?? session.id
     }
-
-    // Fall back to personal slug
-    const client = await db.query.clients.findFirst({
-      where: eq(clients.id, session.id),
-      columns: { slug: true },
-    })
-    redirect(`/${client?.slug ?? session.id}`)
   }
 
   return (
@@ -216,14 +215,21 @@ export default async function LandingPage() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <>
-              <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/login" />}>
-                Log in
+            {dashboardSlug ? (
+              <Button size="sm" nativeButton={false} render={<Link href={`/${dashboardSlug}`} />}>
+                Dashboard
+                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1 size-3.5" />
               </Button>
-              <Button size="sm" nativeButton={false} render={<Link href="/register" />}>
-                Get started
-              </Button>
-            </>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/login" />}>
+                  Log in
+                </Button>
+                <Button size="sm" nativeButton={false} render={<Link href="/register" />}>
+                  Get started
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </nav>
