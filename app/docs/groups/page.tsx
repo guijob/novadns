@@ -212,8 +212,7 @@ export default function GroupsPage() {
       <div id="plan-availability">
         <h2 className="text-base font-semibold mt-8 mb-3">Plan availability</h2>
         <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-          Groups are available on the <strong className="text-foreground">Starter</strong> plan and
-          above. The Free plan does not include group support.
+          Groups are available on all plans.
         </p>
         <div className="border border-border">
           <div className="grid grid-cols-[160px_1fr] text-xs font-mono uppercase tracking-wide text-muted-foreground bg-muted/30 border-b border-border px-4 py-2">
@@ -221,8 +220,8 @@ export default function GroupsPage() {
             <span>Groups</span>
           </div>
           {[
-            { plan: "Free", groups: "Not available" },
-            { plan: "Starter", groups: "Up to 5 groups, unlimited hosts per group" },
+            { plan: "Free", groups: "Unlimited groups, unlimited hosts per group" },
+            { plan: "Starter", groups: "Unlimited groups, unlimited hosts per group" },
             { plan: "Pro", groups: "Unlimited groups, unlimited hosts per group" },
             { plan: "Team", groups: "Unlimited groups, scoped per workspace" },
           ].map(({ plan, groups }) => (

@@ -27,7 +27,7 @@ const novaBase: Omit<Feature, "them" | "note">[] = [
   { label: "DynDNS / NoIP compatible", nova: true },
   { label: "Update log & audit trail", nova: true },
   { label: "Custom TTL",              nova: "Paid plans" },
-  { label: "Host groups",             nova: "Paid plans" },
+  { label: "Host groups",             nova: true },
   { label: "Webhook notifications",   nova: true  },
   { label: "Modern dashboard",        nova: true  },
   { label: "No confirmation emails",  nova: true  },

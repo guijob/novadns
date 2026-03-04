@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
-import Link from "next/link"
 import { getSession } from "@/lib/auth"
 
 export const metadata: Metadata = {
@@ -10,8 +9,6 @@ export const metadata: Metadata = {
 import { getGroups } from "@/lib/actions"
 import { resolveWorkspace } from "@/lib/workspace"
 import { GroupsTable } from "./groups-table"
-import { canCustomizeCredentials } from "@/lib/plans"
-import { Button } from "@/components/ui/button"
 
 export default async function GroupsPage({
   params,
@@ -27,28 +24,6 @@ export default async function GroupsPage({
 
   const base = process.env.BASE_DOMAIN ?? "novaip.link"
   const plan = workspace.plan
-
-  if (!canCustomizeCredentials(plan)) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Groups</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Share one set of credentials across multiple hosts
-          </p>
-        </div>
-        <div className="border border-border px-6 py-10 flex flex-col items-center text-center gap-3 max-w-sm">
-          <p className="font-semibold text-sm">Pro plan required</p>
-          <p className="text-xs text-muted-foreground">
-            Groups and shared credentials are available on the Pro plan ($15/mo) and above.
-          </p>
-          <Button size="sm" nativeButton={false} render={<Link href={`/${slug}/settings`} />}>
-            Upgrade plan
-          </Button>
-        </div>
-      </div>
-    )
-  }
 
   const groups = await getGroups(slug)
 
