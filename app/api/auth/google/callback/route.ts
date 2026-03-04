@@ -95,9 +95,10 @@ export async function GET(req: NextRequest) {
     // Create new account (no password — Google-only)
     const [inserted] = await db.insert(clients)
       .values({
-        email:    googleUser.email.toLowerCase(),
-        name:     googleUser.name,
-        googleId: googleUser.id,
+        email:         googleUser.email.toLowerCase(),
+        name:          googleUser.name,
+        googleId:      googleUser.id,
+        emailVerified: true,
       })
       .returning({ id: clients.id })
 

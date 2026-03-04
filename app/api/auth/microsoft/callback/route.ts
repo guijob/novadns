@@ -101,8 +101,9 @@ export async function GET(req: NextRequest) {
     const [inserted] = await db.insert(clients)
       .values({
         email,
-        name:        msUser.displayName,
-        microsoftId: msUser.id,
+        name:          msUser.displayName,
+        microsoftId:   msUser.id,
+        emailVerified: true,
       })
       .returning({ id: clients.id })
 

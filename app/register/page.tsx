@@ -28,15 +28,16 @@ const perks = [
 ]
 
 export default function RegisterPage() {
-  const router = useRouter()
-  const [error, setError] = useState("")
+  const [error,   setError]   = useState("")
   const [loading, setLoading] = useState(false)
+  const [sentTo,  setSentTo]  = useState("")
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError("")
 
     const fd = new FormData(e.currentTarget)
+    const email    = fd.get("email")    as string
     const password = fd.get("password") as string
     const confirm  = fd.get("confirm")  as string
 
@@ -50,12 +51,11 @@ export default function RegisterPage() {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: fd.get("name"), email: fd.get("email"), password }),
+      body: JSON.stringify({ name: fd.get("name"), email, password }),
     })
 
     if (res.ok) {
-      const { slug } = await res.json()
-      router.push(`/${slug}`)
+      setSentTo(email)
     } else {
       const { error } = await res.json()
       setError(error ?? "Registration failed")
@@ -129,6 +129,21 @@ export default function RegisterPage() {
         {/* Form area */}
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="w-full max-w-sm">
+            {sentTo ? (
+              <div className="text-center">
+                <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={1.5} className="size-6 text-primary" />
+                </div>
+                <h1 className="text-2xl font-bold tracking-tight mb-2">Check your email</h1>
+                <p className="text-sm text-muted-foreground mb-1">
+                  We sent a verification link to
+                </p>
+                <p className="text-sm font-medium text-foreground mb-4">{sentTo}</p>
+                <p className="text-xs text-muted-foreground">
+                  Click the link in the email to activate your account.
+                </p>
+              </div>
+            ) : (
             <div className="mb-8">
               <h1 className="text-2xl font-bold tracking-tight mb-1">Create your account</h1>
               <p className="text-sm text-muted-foreground">
@@ -211,6 +226,7 @@ export default function RegisterPage() {
                 </p>
               </FieldGroup>
             </form>
+            )}
           </div>
         </div>
       </div>

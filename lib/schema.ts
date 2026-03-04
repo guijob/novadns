@@ -13,6 +13,8 @@ export const clients = pgTable("clients", {
   slug:                  varchar("slug", { length: 39 }).unique(),
   plan:                  varchar("plan", { length: 20 }).notNull().default("free"), // "free" | "starter" | "pro" | "business" | "enterprise"
   active:                boolean("active").notNull().default(true),
+  emailVerified:              boolean("email_verified").notNull().default(false),
+  emailVerificationToken:     varchar("email_verification_token", { length: 64 }),
   resetToken:            varchar("reset_token", { length: 64 }),
   resetTokenExpiresAt:   timestamp("reset_token_expires_at"),
   googleId:              varchar("google_id",               { length: 255 }).unique(),

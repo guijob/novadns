@@ -25,6 +25,22 @@ function btn(label: string, href: string) {
   return `<a href="${href}" style="display:inline-block;background:#000;color:#fff;padding:10px 20px;font-size:14px;font-weight:600;text-decoration:none;margin-top:8px">${label}</a>`
 }
 
+// ── Email verification ───────────────────────────────────────────────────────
+
+export async function sendVerificationEmail(to: string, name: string, token: string) {
+  const link = dashUrl(`/api/auth/verify-email?token=${token}`)
+  await resend.emails.send({
+    from: from(), to,
+    subject: "Verify your NovaDNS email",
+    html: layout(`
+      <h1 style="font-size:20px;font-weight:700;margin:0 0 8px">Verify your email</h1>
+      <p style="font-size:14px;color:#444;margin:0 0 24px">Hi ${name}, click the button below to confirm your email address and activate your account.</p>
+      ${btn("Verify email", link)}
+      <p style="font-size:12px;color:#999;margin:16px 0 0">This link expires in 24 hours. If you didn't create an account, you can ignore this email.</p>
+    `),
+  })
+}
+
 // ── Welcome ──────────────────────────────────────────────────────────────────
 
 export async function sendWelcomeEmail(to: string, name: string) {

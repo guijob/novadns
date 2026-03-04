@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
+import crypto from "crypto"
 import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { clients } from "@/lib/schema"
-import { setSessionCookie } from "@/lib/auth"
-import { sendWelcomeEmail } from "@/lib/email"
+import { sendVerificationEmail } from "@/lib/email"
 import { generateSlug, findAvailableSlug } from "@/lib/slug"
 
 export async function POST(req: NextRequest) {
@@ -27,18 +27,23 @@ export async function POST(req: NextRequest) {
   }
 
   const passwordHash = await bcrypt.hash(password, 12)
+  const verificationToken = crypto.randomBytes(32).toString("hex")
 
   const [client] = await db
     .insert(clients)
-    .values({ name: name.trim(), email: email.toLowerCase().trim(), passwordHash })
+    .values({
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      passwordHash,
+      emailVerificationToken: verificationToken,
+    })
     .returning({ id: clients.id })
 
   const slugBase = generateSlug(email.toLowerCase().trim().split("@")[0])
   const slug = await findAvailableSlug(slugBase)
   await db.update(clients).set({ slug }).where(eq(clients.id, client.id))
 
-  await setSessionCookie(client.id)
-  sendWelcomeEmail(email.toLowerCase().trim(), name.trim()).catch(() => {})
+  sendVerificationEmail(email.toLowerCase().trim(), name.trim(), verificationToken).catch(() => {})
 
-  return NextResponse.json({ ok: true, slug })
+  return NextResponse.json({ pending: true })
 }

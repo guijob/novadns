@@ -29,6 +29,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
   }
 
+  if (!client.emailVerified) {
+    return NextResponse.json({ error: "Please verify your email before logging in. Check your inbox for the verification link." }, { status: 403 })
+  }
+
   if (client.mfaEnabled && client.totpSecret) {
     const challengeToken = await signMfaChallengeToken(client.id)
     return NextResponse.json({ mfaRequired: true, challengeToken })
