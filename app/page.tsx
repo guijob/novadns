@@ -3,11 +3,11 @@ import type { Metadata } from "next"
 import { cookies } from "next/headers"
 
 export const metadata: Metadata = {
-  title: "NovaDNS — Free Dynamic DNS for Home Servers",
-  description: "Stable hostnames for dynamic IPs. NovaDNS keeps your home server, lab, or IoT device reachable even as your IP changes. Free plan, no credit card required.",
+  title: "NovaDNS — Dynamic DNS for Cameras & IoT Devices",
+  description: "Stable hostnames for dynamic IPs. NovaDNS keeps your IP cameras, IoT gateways, and remote sites reachable even as your IP changes. Free plan, no credit card required.",
   openGraph: {
-    title: "NovaDNS — Free Dynamic DNS for Home Servers",
-    description: "Stable hostnames for dynamic IPs. NovaDNS keeps your home server, lab, or IoT device reachable even as your IP changes. Free plan, no credit card required.",
+    title: "NovaDNS — Dynamic DNS for Cameras & IoT Devices",
+    description: "Stable hostnames for dynamic IPs. NovaDNS keeps your IP cameras, IoT gateways, and remote sites reachable even as your IP changes. Free plan, no credit card required.",
     type: "website",
     url: "https://novadns.io",
     siteName: "NovaDNS",
@@ -63,7 +63,7 @@ const features = [
     icon: RouterIcon,
     title: "DynDNS & NoIP Compatible",
     description:
-      "Drop-in replacement for DynDNS and NoIP. Works out-of-the-box with any router, NAS, or firmware that speaks those protocols. Zero reconfiguration.",
+      "Drop-in replacement for DynDNS and NoIP. Works out-of-the-box with any camera, IoT gateway, or router that speaks those protocols. Zero reconfiguration.",
   },
   {
     icon: GlobeIcon,
@@ -75,7 +75,7 @@ const features = [
     icon: ServerStack01Icon,
     title: "IPv6 Subnet Support",
     description:
-      "Track an entire IPv6 /48 or /64 prefix under a single hostname. Ideal for ISPs that assign dynamic prefix blocks to your router.",
+      "Track an entire IPv6 /48 or /64 prefix under a single hostname. Ideal for sites with multiple cameras sharing a dynamic prefix.",
   },
   {
     icon: Key01Icon,
@@ -93,7 +93,7 @@ const features = [
     icon: ApiIcon,
     title: "One-Line HTTP API",
     description:
-      "Update with a single HTTP request. Compatible with curl, wget, ddclient, inadyn, and any HTTP-capable client or script.",
+      "Update with a single HTTP request. Compatible with curl, wget, ddclient, inadyn, and any HTTP-capable client — including camera firmware.",
   },
 ]
 
@@ -115,7 +115,7 @@ const steps = [
     icon: RouterIcon,
     title: "Point your device",
     description:
-      "Enter your credentials in your router's DynDNS settings, or call the API directly.",
+      "Configure your camera, gateway, or router's DynDNS settings — or call the API directly.",
   },
 ]
 
@@ -151,15 +151,15 @@ const paidTiers = [
 
 
 const compatClients = [
+  "Hikvision",
+  "Dahua",
+  "Reolink",
+  "Axis",
   "ddclient",
   "inadyn",
   "pfSense",
   "OPNsense",
-  "Synology",
-  "UniFi",
-  "ASUS",
   "OpenWrt",
-  "TP-Link",
   "curl",
 ]
 
@@ -245,11 +245,11 @@ export default async function LandingPage() {
 
             <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-bold tracking-tight leading-[1.06] mb-5">
               Dynamic DNS<br />
-              <span className="text-primary">for the modern{" "}<br className="hidden sm:block" />infrastructure.</span>
+              <span className="text-primary">for cameras, IoT, and{" "}<br className="hidden sm:block" />connected devices.</span>
             </h1>
 
             <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-8 max-w-[420px]">
-              The simplest way to keep your services reachable — with token security and IPv6 subnet support built in.
+              Keep your cameras, gateways, and device fleets always reachable — with token security and IPv6 subnet support built in.
             </p>
 
             <div className="flex flex-wrap gap-3">
@@ -291,28 +291,28 @@ export default async function LandingPage() {
             <div className="divide-y divide-border">
               {[
                 {
-                  name: "home.novaip.link",
+                  name: "cam-lobby.novaip.link",
                   ipv4: "203.0.113.42",
                   ipv6: "2001:db8::1",
                   seen: "just now",
                   online: true,
                 },
                 {
-                  name: "office.novaip.link",
+                  name: "cam-warehouse.novaip.link",
                   ipv4: "198.51.100.7",
                   ipv6: "2001:db8:a::1",
                   seen: "2 min ago",
                   online: true,
                 },
                 {
-                  name: "vpn.novaip.link",
+                  name: "sensor-hq.novaip.link",
                   ipv4: "192.0.2.55",
                   ipv6: "2001:db8:b::1",
                   seen: "5 min ago",
                   online: true,
                 },
                 {
-                  name: "nas.novaip.link",
+                  name: "gate-south.novaip.link",
                   ipv4: "203.0.113.88",
                   ipv6: null,
                   seen: "3 h ago",
@@ -348,7 +348,7 @@ export default async function LandingPage() {
             {/* Panel footer */}
             <div className="border-t border-border px-4 py-2.5 flex items-center justify-between bg-muted/20">
               <span className="text-xs text-muted-foreground">novaip.link</span>
-              <span className="text-xs text-muted-foreground font-mono">4 hosts · free plan</span>
+              <span className="text-xs text-muted-foreground font-mono">4 devices · free plan</span>
             </div>
           </div>
         </div>
@@ -360,7 +360,7 @@ export default async function LandingPage() {
           <div className="mb-14">
             <p className="text-xs text-primary font-mono uppercase tracking-widest mb-3">Features</p>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Everything your<br />infrastructure needs.
+              Everything your<br />devices need.
             </h2>
           </div>
 
@@ -533,7 +533,7 @@ export default async function LandingPage() {
                 <span className="text-3xl font-bold">$0</span>
                 <span className="text-muted-foreground text-sm ml-1">/mo</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1 mb-6">3 hosts · no card needed</p>
+              <p className="text-xs text-muted-foreground mt-1 mb-6">3 devices · no card needed</p>
               <ul className="space-y-2 mb-6 flex-1">
                 {freeFeatures.map((item) => (
                   <li key={item} className="flex items-start gap-2 text-xs">
@@ -569,7 +569,7 @@ export default async function LandingPage() {
                   <span className="text-3xl font-bold">${tier.price}</span>
                   <span className="text-muted-foreground text-sm ml-1">/mo</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1 mb-6">{tier.hosts} hosts</p>
+                <p className="text-xs text-muted-foreground mt-1 mb-6">{tier.hosts} devices</p>
                 <ul className="space-y-2 mb-6 flex-1">
                   {paidFeatures.map((item) => (
                     <li key={item} className="flex items-start gap-2 text-xs">
@@ -611,7 +611,7 @@ export default async function LandingPage() {
             Get started
           </p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4">
-            Your IPs, always reachable.
+            Your devices, always reachable.
           </h2>
           <p className="text-muted-foreground mb-8 max-w-md mx-auto leading-relaxed">
             Free plan available. No credit card required.

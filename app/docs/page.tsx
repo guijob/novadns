@@ -53,6 +53,8 @@ const guides = [
 
 const learn = [
   { href: "/docs/home-server",       icon: HomeIcon,       title: "Home Server Guide",    desc: "Self-hosting with DDNS, ports, and VPN."      },
+  { href: "/docs/cameras",           icon: SecurityIcon,   title: "IP Cameras Guide",     desc: "Remote access for Hikvision, Dahua, Reolink, and more." },
+  { href: "/docs/iot",               icon: SettingsIcon,   title: "IoT Devices Guide",    desc: "DDNS for gateways, sensors, and edge devices." },
   { href: "/docs/static-vs-dynamic", icon: CloudIcon,      title: "Static vs Dynamic IP", desc: "When DDNS is all you need."                   },
   { href: "/docs/why-ipv6",          icon: ServerStackIcon,title: "Why IPv6?",            desc: "The case for dual-stack in your setup."        },
 ]

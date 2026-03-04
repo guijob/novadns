@@ -6,8 +6,8 @@ import { PlusSignIcon } from "@hugeicons/core-free-icons"
 
 const faqs = [
   {
-    q: "Is NovaDNS compatible with my router or NAS?",
-    a: "Yes. NovaDNS implements the DynDNS and NoIP update protocols verbatim, so it works with any device or firmware that supports those providers — including Synology DSM, pfSense, OPNsense, OpenWrt, ASUS, TP-Link, UniFi, and more. No custom client needed.",
+    q: "Does NovaDNS work with my IP cameras?",
+    a: "Yes. NovaDNS implements the DynDNS and NoIP update protocols verbatim, so it works with any camera that has a built-in DDNS client — including Hikvision, Dahua, Reolink, and Axis. It also works with routers and gateways like pfSense, OPNsense, OpenWrt, and more. No custom client needed.",
   },
   {
     q: "What is IPv6 subnet support?",
@@ -19,11 +19,15 @@ const faqs = [
   },
   {
     q: "What is the difference between Free and Pro?",
-    a: "The Free plan covers 3 active hosts — more than enough for a home lab. Paid plans start at $5/mo for 25 hosts and scale up to 500 hosts at $50/mo. All paid plans include custom TTL, IPv6 subnet tracking, and priority support.",
+    a: "The Free plan covers 3 active devices — more than enough for a few cameras or a small site. Paid plans start at $5/mo for 25 devices and scale up to 500 devices at $50/mo. All paid plans include custom TTL, IPv6 subnet tracking, and priority support.",
   },
   {
     q: "Can I rotate my update token?",
     a: "Yes. Open the host settings in your dashboard and click Regenerate Token. The old token is invalidated immediately. Your device will start failing updates until you enter the new token — by design, so you stay in control.",
+  },
+  {
+    q: "Can I manage hundreds of devices?",
+    a: "Absolutely. NovaDNS supports host groups, team workspaces, and webhook notifications — all designed for managing large device fleets. Paid plans scale up to 500 devices, and every IP change can trigger a webhook for your monitoring stack.",
   },
 ]
 

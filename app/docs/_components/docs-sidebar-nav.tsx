@@ -37,6 +37,8 @@ const navGroups = [
     label: "Learn",
     items: [
       { href: "/docs/home-server",        label: "Home Server Guide"      },
+      { href: "/docs/cameras",            label: "IP Cameras Guide"       },
+      { href: "/docs/iot",                label: "IoT Devices Guide"      },
       { href: "/docs/static-vs-dynamic",  label: "Static vs Dynamic IP"   },
       { href: "/docs/why-ipv6",           label: "Why IPv6?"              },
     ],

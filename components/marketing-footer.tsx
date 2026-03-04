@@ -39,6 +39,13 @@ const columns = [
     ],
   },
   {
+    heading: "Use Cases",
+    links: [
+      { href: "/docs/cameras", label: "IP Cameras"  },
+      { href: "/docs/iot",     label: "IoT Devices" },
+    ],
+  },
+  {
     heading: "Company",
     links: [
       { href: "/about",   label: "About"   },
@@ -70,12 +77,12 @@ export function MarketingFooter() {
               <Logo className="h-6 w-auto" />
             </Link>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Dynamic DNS for the modern infrastructure.
+              Dynamic DNS for cameras and connected devices.
             </p>
           </div>
 
           {/* Link columns — 2-col on mobile, auto on lg */}
-          <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-8 text-xs text-muted-foreground">
+          <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-x-6 gap-y-8 text-xs text-muted-foreground">
             {columns.map(({ heading, links }) => (
               <div key={heading} className="space-y-2.5">
                 <p className="font-mono uppercase tracking-wide text-foreground text-[0.65rem]">

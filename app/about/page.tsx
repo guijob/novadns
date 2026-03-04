@@ -16,10 +16,10 @@ import { ThemeToggle } from "@/components/theme-toggle"
 
 export const metadata: Metadata = {
   title: "About — NovaDNS",
-  description: "NovaDNS is a modern dynamic DNS service built for home servers, self-hosters, and developers who need stable hostnames for dynamic IPs.",
+  description: "NovaDNS is a modern dynamic DNS service built for teams managing IP cameras, IoT devices, and connected infrastructure in the field.",
   openGraph: {
     title: "About — NovaDNS",
-    description: "NovaDNS is a modern dynamic DNS service built for home servers, self-hosters, and developers who need stable hostnames for dynamic IPs.",
+    description: "NovaDNS is a modern dynamic DNS service built for teams managing IP cameras, IoT devices, and connected infrastructure in the field.",
     type: "website",
     url: "https://novadns.io/about",
     siteName: "NovaDNS",
@@ -41,17 +41,17 @@ const principles = [
   {
     icon: RouterIcon,
     title: "Works with everything",
-    body: "Your router, NAS, or firewall already knows how to talk DynDNS. We implement the protocol faithfully so you don't need new firmware or special clients.",
+    body: "Your cameras, gateways, and routers already know how to talk DynDNS. We implement the protocol faithfully so you don't need new firmware or special clients.",
   },
   {
     icon: Key01Icon,
     title: "Per-host credentials",
-    body: "Each host has its own token and Basic Auth credentials. Rotate one without touching the others. No shared secrets across your infrastructure.",
+    body: "Each device has its own token and Basic Auth credentials. Rotate one without touching the others. No shared secrets across your fleet.",
   },
   {
     icon: ServerStackIcon,
     title: "Free tier that's actually useful",
-    body: "Three hosts, full dual-stack, webhooks, update logs — all on the free plan. No credit card required, no artificial limits to push you toward a paid tier.",
+    body: "Three devices, full dual-stack, webhooks, update logs — all on the free plan. No credit card required, no artificial limits to push you toward a paid tier.",
   },
 ]
 
@@ -90,12 +90,12 @@ export default function AboutPage() {
           <div className="relative max-w-6xl mx-auto px-6 max-w-2xl">
             <p className="text-xs font-mono uppercase tracking-widest text-primary mb-4">About</p>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight mb-6">
-              Built for people who<br />run things at home.
+              Built for teams managing<br />devices in the field.
             </h1>
             <p className="text-muted-foreground leading-relaxed text-lg max-w-xl">
               NovaDNS started as a simple frustration: existing DDNS services were either
               expensive, outdated, or didn't support IPv6 properly. We built the service
-              we wanted to use ourselves.
+              we wanted to use ourselves — and teams managing cameras and IoT fleets needed it too.
             </p>
           </div>
         </section>
@@ -110,7 +110,7 @@ export default function AboutPage() {
               </h2>
               <p className="text-muted-foreground text-sm leading-relaxed mb-4">
                 Most internet connections assign a different IP address every time your router reconnects.
-                That makes it impossible to reliably reach a device at home — a server, a camera, a NAS —
+                That makes it impossible to reliably reach a device in the field — a camera, a sensor, a gateway —
                 from the outside world.
               </p>
               <p className="text-muted-foreground text-sm leading-relaxed mb-4">
@@ -120,8 +120,8 @@ export default function AboutPage() {
               </p>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 NovaDNS is a fresh take: clean API, proper IPv6, webhook notifications, team support,
-                and a protocol-compatible update endpoint that works with the router already sitting
-                on your desk.
+                and a protocol-compatible update endpoint that works with the cameras and gateways
+                already deployed at your sites.
               </p>
             </div>
 
@@ -133,7 +133,7 @@ export default function AboutPage() {
                 "Per-host tokens — no shared credentials",
                 "Real-time webhooks on IP change",
                 "Update logs with timestamps and caller IPs",
-                "Team workspaces for shared infrastructure",
+                "Team workspaces for device fleet management",
               ].map(item => (
                 <div key={item} className="flex items-start gap-3">
                   <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={1.5} className="size-4 text-primary shrink-0 mt-0.5" />
@@ -173,7 +173,7 @@ export default function AboutPage() {
           <div className="relative max-w-6xl mx-auto px-6 text-center">
             <h2 className="text-3xl font-bold tracking-tight mb-4">Try it for free</h2>
             <p className="text-muted-foreground mb-8 max-w-sm mx-auto leading-relaxed">
-              Three hosts, full dual-stack, no credit card. Up and running in under 5 minutes.
+              Three devices, full dual-stack, no credit card. Up and running in under 5 minutes.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Button size="lg" nativeButton={false} render={<Link href="/register" />}>

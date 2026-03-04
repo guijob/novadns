@@ -40,6 +40,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "dyndns",
     "clients",
     "routers",
+    "cameras",
+    "iot",
   ].map(slug => ({
     url:             `${BASE}/docs/${slug}`,
     lastModified:    now,
