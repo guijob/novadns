@@ -284,10 +284,7 @@ export default function StaticVsDynamicPage() {
         Cloudflare Tunnel to bypass the NAT.
       </div>
 
-      <PageNav
-        prev={{ href: "/docs/home-server", label: "Home Server Guide" }}
-        next={undefined}
-      />
+      <PageNav />
     </div>
   )
 }

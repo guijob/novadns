@@ -273,10 +273,7 @@ export default function TeamsPage() {
         </p>
       </div>
 
-      <PageNav
-        prev={{ href: "/docs/groups", label: "Groups" }}
-        next={{ href: "/docs/webhooks", label: "Webhooks" }}
-      />
+      <PageNav />
     </div>
   )
 }

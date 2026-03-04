@@ -300,10 +300,7 @@ export default function RoutersPage() {
         </div>
       </div>
 
-      <PageNav
-        prev={{ href: "/docs/clients",  label: "Client Setup" }}
-        next={{ href: "/docs/security", label: "Security"     }}
-      />
+      <PageNav />
     </div>
   )
 }

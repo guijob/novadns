@@ -337,10 +337,7 @@ export default function TroubleshootingPage() {
         </p>
       </div>
 
-      <PageNav
-        prev={{ href: "/docs/security", label: "Security"              }}
-        next={{ href: "/docs/dyndns",   label: "DynDNS Compatibility"  }}
-      />
+      <PageNav />
     </div>
   )
 }

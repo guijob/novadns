@@ -294,10 +294,7 @@ export default function SecurityPage() {
         </div>
       </div>
 
-      <PageNav
-        prev={{ href: "/docs/routers",         label: "Router Setup"     }}
-        next={{ href: "/docs/troubleshooting",  label: "Troubleshooting"  }}
-      />
+      <PageNav />
     </div>
   )
 }

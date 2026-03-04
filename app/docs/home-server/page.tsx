@@ -339,10 +339,7 @@ export default function HomeServerPage() {
         </li>
       </ul>
 
-      <PageNav
-        prev={{ href: "/docs/what-is-ddns", label: "What is DDNS?" }}
-        next={{ href: "/docs/static-vs-dynamic", label: "Static vs Dynamic IP" }}
-      />
+      <PageNav />
     </div>
   )
 }

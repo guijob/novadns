@@ -173,9 +173,7 @@ export default function WhyIPv6Page() {
         <><Strong>Test end-to-end.</Strong> Some older devices and applications may not fully support IPv6. Verify connectivity before relying on it for critical access.</>,
       ]} />
 
-      <PageNav
-        prev={{ href: "/docs/clients", label: "Client Setup" }}
-      />
+      <PageNav />
     </div>
   )
 }

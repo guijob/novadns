@@ -169,10 +169,7 @@ export default function IPv6Page() {
         </div>
       </div>
 
-      <PageNav
-        prev={{ href: "/docs/api",     label: "API Reference" }}
-        next={{ href: "/docs/clients", label: "Client Setup"  }}
-      />
+      <PageNav />
     </div>
   )
 }

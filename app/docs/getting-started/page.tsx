@@ -151,10 +151,7 @@ export default function GettingStartedPage() {
         </div>
       </div>
 
-      <PageNav
-        prev={{ href: "/docs",        label: "Overview"     }}
-        next={{ href: "/docs/api",    label: "API Reference" }}
-      />
+      <PageNav />
     </div>
   )
 }

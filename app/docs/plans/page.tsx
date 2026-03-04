@@ -207,10 +207,7 @@ export default function PlansPage() {
         can update your payment method, view invoices, and cancel.
       </p>
 
-      <PageNav
-        prev={{ href: "/docs/dyndns", label: "DynDNS Compatibility" }}
-        next={{ href: "/docs/what-is-ddns", label: "What is DDNS?" }}
-      />
+      <PageNav />
     </div>
   )
 }

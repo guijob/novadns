@@ -238,10 +238,7 @@ export default function GroupsPage() {
         </p>
       </div>
 
-      <PageNav
-        prev={{ href: "/docs/clients", label: "Client Setup" }}
-        next={{ href: "/docs/webhooks", label: "Webhooks" }}
-      />
+      <PageNav />
     </div>
   )
 }

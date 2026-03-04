@@ -1,14 +1,36 @@
-// Server Component
+"use client"
+
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons"
 
-interface PageNavProps {
-  prev?: { href: string; label: string }
-  next?: { href: string; label: string }
-}
+const pages = [
+  { href: "/docs",                  label: "Overview"              },
+  { href: "/docs/getting-started",  label: "Quick Start"           },
+  { href: "/docs/what-is-ddns",     label: "What is DDNS?"         },
+  { href: "/docs/api",              label: "API Reference"         },
+  { href: "/docs/dyndns",           label: "DynDNS Compatibility"  },
+  { href: "/docs/ipv6",             label: "IPv6 & Subnets"        },
+  { href: "/docs/plans",            label: "Plans & Limits"        },
+  { href: "/docs/clients",          label: "Client Setup"          },
+  { href: "/docs/routers",          label: "Router Setup"          },
+  { href: "/docs/groups",           label: "Groups"                },
+  { href: "/docs/webhooks",         label: "Webhooks"              },
+  { href: "/docs/teams",            label: "Teams"                 },
+  { href: "/docs/security",         label: "Security"              },
+  { href: "/docs/troubleshooting",  label: "Troubleshooting"       },
+  { href: "/docs/home-server",      label: "Home Server Guide"     },
+  { href: "/docs/static-vs-dynamic",label: "Static vs Dynamic IP"  },
+  { href: "/docs/why-ipv6",         label: "Why IPv6?"             },
+]
 
-export function PageNav({ prev, next }: PageNavProps) {
+export function PageNav() {
+  const pathname = usePathname()
+  const idx  = pages.findIndex(p => p.href === pathname)
+  const prev = idx > 0           ? pages[idx - 1] : undefined
+  const next = idx < pages.length - 1 ? pages[idx + 1] : undefined
+
   return (
     <div className="border-t border-border mt-12 pt-6 flex items-center justify-between gap-4">
       {prev ? (

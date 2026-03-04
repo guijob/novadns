@@ -247,10 +247,7 @@ export default function WebhooksPage() {
         </div>
       </div>
 
-      <PageNav
-        prev={{ href: "/docs/groups", label: "Groups" }}
-        next={{ href: "/docs/security", label: "Security" }}
-      />
+      <PageNav />
     </div>
   )
 }

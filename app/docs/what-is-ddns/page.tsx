@@ -239,10 +239,7 @@ export default function WhatIsDdnsPage() {
         ))}
       </div>
 
-      <PageNav
-        prev={{ href: "/docs/plans", label: "Plans & Limits" }}
-        next={{ href: "/docs/home-server", label: "Home Server Guide" }}
-      />
+      <PageNav />
     </div>
   )
 }

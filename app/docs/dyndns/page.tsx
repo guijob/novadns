@@ -251,10 +251,7 @@ export default function DynDNSPage() {
         {c.key("password")}{c.plain(" =  ")}{c.str("YOUR_HOST_PASSWORD")}
       </CodeBlock>
 
-      <PageNav
-        prev={{ href: "/docs/troubleshooting", label: "Troubleshooting" }}
-        next={{ href: "/docs/plans", label: "Plans & Limits" }}
-      />
+      <PageNav />
     </div>
   )
 }

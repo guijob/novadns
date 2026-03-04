@@ -207,10 +207,7 @@ export default function ApiPage() {
         </div>
       </div>
 
-      <PageNav
-        prev={{ href: "/docs/getting-started", label: "Quick Start"    }}
-        next={{ href: "/docs/ipv6",             label: "IPv6 & Subnets" }}
-      />
+      <PageNav />
     </div>
   )
 }
