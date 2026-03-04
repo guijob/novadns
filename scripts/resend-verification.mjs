@@ -41,11 +41,17 @@ const { error } = await resend.emails.send({
   to:      client.email,
   subject: "Verify your NovaDNS email",
   html: `
-    <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#111">
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#111">
+      <div style="margin-bottom:28px">
+        <span style="font-size:22px;font-weight:700;color:#111;letter-spacing:-0.5px">NovaDNS</span>
+        <span style="display:block;width:38px;height:4px;background:#4068c8;border-radius:2px;margin-top:3px"></span>
+      </div>
       <h1 style="font-size:20px;font-weight:700;margin:0 0 8px">Verify your email</h1>
       <p style="font-size:14px;color:#444;margin:0 0 24px">Hi ${client.name}, click the button below to confirm your email address and activate your account.</p>
       <a href="${link}" style="display:inline-block;background:#000;color:#fff;font-size:14px;font-weight:600;padding:12px 24px;text-decoration:none">Verify email</a>
       <p style="font-size:12px;color:#999;margin:16px 0 0">This link expires when used. If you didn't create an account, you can ignore this email.</p>
+      <hr style="border:none;border-top:1px solid #eee;margin:32px 0 16px"/>
+      <p style="font-size:12px;color:#999;margin:0">NovaDNS · <a href="https://${appDomain}" style="color:#999">${appDomain}</a></p>
     </div>
   `,
 })

@@ -6,12 +6,21 @@ function base() { return process.env.APP_DOMAIN ?? "novadns.io" }
 function from() { return `NovaDNS <noreply@${base()}>` }
 function dashUrl(path = "") { return `https://${base()}${path}` }
 
+function logo() {
+  return `
+    <div style="margin-bottom:28px">
+      <a href="${dashUrl()}" style="text-decoration:none;display:inline-block">
+        <span style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:22px;font-weight:700;color:#111;letter-spacing:-0.5px">NovaDNS</span>
+        <span style="display:block;width:38px;height:4px;background:#4068c8;border-radius:2px;margin-top:3px"></span>
+      </a>
+    </div>
+  `
+}
+
 function layout(content: string) {
   return `
-    <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#111">
-      <div style="margin-bottom:24px">
-        <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;background:#000;color:#fff;font-weight:700;font-size:14px">N</span>
-      </div>
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#111">
+      ${logo()}
       ${content}
       <hr style="border:none;border-top:1px solid #eee;margin:32px 0 16px"/>
       <p style="font-size:12px;color:#999;margin:0">
