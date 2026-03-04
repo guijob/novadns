@@ -1,4 +1,5 @@
 "use client"
+import { Logo } from "@/components/logo"
 
 import { useState, useTransition } from "react"
 import Link from "next/link"
@@ -57,8 +58,7 @@ export default function ContactPage() {
       <header className="sticky top-0 z-50 h-12 border-b border-border bg-background/80 backdrop-blur-md flex items-center shrink-0">
         <div className="w-full px-6 flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2 text-sm font-semibold">
-            <div className="size-6 bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold select-none">N</div>
-            NovaDNS
+            <Logo className="h-6 w-auto" />
           </Link>
           <div className="flex items-center gap-4 text-sm">
             <Link href="/docs" className="text-muted-foreground hover:text-foreground transition-colors">Docs</Link>

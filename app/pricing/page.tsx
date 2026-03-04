@@ -1,4 +1,5 @@
 "use client"
+import { Logo } from "@/components/logo"
 
 import React, { useState } from "react"
 import Link from "next/link"
@@ -130,8 +131,7 @@ export default function PricingPage() {
       <header className="sticky top-0 z-50 h-12 border-b border-border bg-background/80 backdrop-blur-md flex items-center shrink-0">
         <div className="w-full max-w-6xl mx-auto px-6 flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="size-7 bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold select-none">N</div>
-            <span className="font-semibold text-sm tracking-tight">NovaDNS</span>
+            <Logo className="h-7 w-auto" />
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />

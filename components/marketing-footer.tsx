@@ -1,3 +1,4 @@
+import { Logo } from "@/components/logo"
 import Link from "next/link"
 
 const columns = [
@@ -66,10 +67,7 @@ export function MarketingFooter() {
           {/* Brand */}
           <div className="shrink-0 md:w-44">
             <Link href="/" className="flex items-center gap-2.5 mb-3">
-              <div className="size-7 bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold select-none">
-                N
-              </div>
-              <span className="font-semibold text-sm tracking-tight">NovaDNS</span>
+              <Logo className="h-6 w-auto" />
             </Link>
             <p className="text-xs text-muted-foreground leading-relaxed">
               Dynamic DNS for the modern infrastructure.

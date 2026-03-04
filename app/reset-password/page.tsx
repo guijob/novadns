@@ -1,4 +1,5 @@
 "use client"
+import { Logo } from "@/components/logo"
 
 import { useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -72,8 +73,7 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <div className="flex items-center justify-between p-4 border-b border-border">
         <Link href="/" className="flex items-center gap-2">
-          <div className="size-7 bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold select-none">N</div>
-          <span className="font-semibold text-sm tracking-tight">NovaDNS</span>
+          <Logo className="h-6 w-auto" />
         </Link>
         <ThemeToggle />
       </div>
