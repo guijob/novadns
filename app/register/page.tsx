@@ -28,9 +28,22 @@ const perks = [
 ]
 
 export default function RegisterPage() {
-  const [error,   setError]   = useState("")
-  const [loading, setLoading] = useState(false)
-  const [sentTo,  setSentTo]  = useState("")
+  const [error,    setError]    = useState("")
+  const [loading,  setLoading]  = useState(false)
+  const [sentTo,   setSentTo]   = useState("")
+  const [resending, setResending] = useState(false)
+  const [resent,   setResent]   = useState(false)
+
+  async function handleResend() {
+    setResending(true)
+    await fetch("/api/auth/resend-verification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: sentTo }),
+    })
+    setResending(false)
+    setResent(true)
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -139,9 +152,20 @@ export default function RegisterPage() {
                   We sent a verification link to
                 </p>
                 <p className="text-sm font-medium text-foreground mb-4">{sentTo}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mb-6">
                   Click the link in the email to activate your account.
                 </p>
+                {resent ? (
+                  <p className="text-xs text-primary">Email resent!</p>
+                ) : (
+                  <button
+                    onClick={handleResend}
+                    disabled={resending}
+                    className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors disabled:opacity-50"
+                  >
+                    {resending ? "Sending…" : "Didn't receive it? Resend email"}
+                  </button>
+                )}
               </div>
             ) : (
             <>

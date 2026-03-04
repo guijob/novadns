@@ -38,10 +38,26 @@ function LoginForm() {
   const [challengeToken, setChallengeToken] = useState(mfaToken)
   const [useBackup,      setUseBackup]      = useState(false)
 
-  const [error,    setError]    = useState(oauthError ? "Google sign-in failed. Please try again." : "")
-  const [showPw,   setShowPw]   = useState(false)
-  const [loading,  setLoading]  = useState(false)
-  const [wakingUp, setWakingUp] = useState(false)
+  const [error,       setError]       = useState(oauthError ? "Google sign-in failed. Please try again." : "")
+  const [showPw,      setShowPw]      = useState(false)
+  const [loading,     setLoading]     = useState(false)
+  const [wakingUp,    setWakingUp]    = useState(false)
+  const [lastEmail,   setLastEmail]   = useState("")
+  const [resending,   setResending]   = useState(false)
+  const [resent,      setResent]      = useState(false)
+
+  const isUnverified = error.includes("verify your email")
+
+  async function handleResend() {
+    setResending(true)
+    await fetch("/api/auth/resend-verification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: lastEmail }),
+    })
+    setResending(false)
+    setResent(true)
+  }
 
   async function fetchWithWakeup(url: string, body: string): Promise<Response> {
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -78,6 +94,7 @@ function LoginForm() {
     const fd = new FormData(e.currentTarget)
     let res: Response
     try {
+      setLastEmail(fd.get("email") as string)
       res = await fetchWithWakeup("/api/auth/login", JSON.stringify({ email: fd.get("email"), password: fd.get("password") }))
     } catch {
       setError("Could not reach the server. Please try again.")
@@ -237,7 +254,18 @@ function LoginForm() {
         {wasReset && (
           <p className="text-sm text-green-600 dark:text-green-400">Password updated — sign in with your new password.</p>
         )}
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && (
+          <div>
+            <p className="text-sm text-destructive">{error}</p>
+            {isUnverified && (
+              resent
+                ? <p className="text-xs text-primary mt-1">Verification email resent!</p>
+                : <button onClick={handleResend} disabled={resending} className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors mt-1 disabled:opacity-50">
+                    {resending ? "Sending…" : "Resend verification email"}
+                  </button>
+            )}
+          </div>
+        )}
         <Button type="submit" className="w-full" disabled={loading}>
           {wakingUp ? "Waking up database…" : loading ? "Signing in…" : "Sign in"}
         </Button>
