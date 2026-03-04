@@ -1,18 +1,20 @@
 export function Logo({ className }: { className?: string }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 92 58"
-      fill="none"
-      aria-label="NovaDNS"
-      className={className}
-    >
-      <g stroke="currentColor" strokeWidth={8} strokeLinecap="butt">
-        <line x1={12} y1={10} x2={12} y2={48} />
-        <line x1={12} y1={10} x2={46} y2={48} />
-        <line x1={46} y1={10} x2={46} y2={48} />
-      </g>
-      <rect x={60} y={44} width={24} height={5} rx={1} fill="var(--color-primary)" />
-    </svg>
+    <span className={`inline-flex items-center ${className ?? ""}`}>
+      <span className="font-semibold tracking-tight text-foreground leading-none text-[1.4rem]" aria-label="NovaDNS">
+        NovaDNS
+      </span>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="4 6 50 46"
+        fill="none"
+        overflow="visible"
+        aria-hidden="true"
+        className="h-5 w-auto"
+      >
+        {/* bar below N — overflows the viewBox, visible due to overflow="visible" */}
+        <rect x={8} y={56} width={32} height={6} rx={2} fill="var(--color-primary)" />
+      </svg>
+    </span>
   )
 }

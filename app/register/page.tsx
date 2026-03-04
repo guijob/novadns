@@ -66,18 +66,15 @@ export default function RegisterPage() {
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
 
       {/* ── LEFT PANEL ───────────────────────────────────────────── */}
-      <div className="relative hidden lg:flex flex-col justify-between p-12 border-r border-border overflow-hidden bg-muted/20">
+      <div className="relative hidden lg:flex flex-col justify-between p-6 border-r border-border overflow-hidden bg-muted/20">
         {/* dot grid */}
         <div className="absolute inset-0 opacity-[0.04] dark:opacity-[0.065]" style={DOT_GRID} />
         {/* bottom glow */}
         <div className="absolute inset-0 pointer-events-none" style={GLOW} />
 
         {/* Logo */}
-        <Link href="/" className="relative flex items-center gap-2.5 w-fit">
-          <div className="size-8 bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold select-none">
-            N
-          </div>
-          <span className="font-semibold text-sm tracking-tight">NovaDNS</span>
+        <Link href="/" className="relative w-fit">
+          <Logo />
         </Link>
 
         {/* Middle content */}

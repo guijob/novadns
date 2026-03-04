@@ -1,5 +1,6 @@
 // Server Component
 import Link from "next/link"
+import { Logo } from "@/components/logo"
 import { Inter } from "next/font/google"
 import { Button } from "@/components/ui/button"
 import { DocsSidebarNav } from "./_components/docs-sidebar-nav"
@@ -15,13 +16,13 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
     <div className={`${inter.className} min-h-screen bg-background text-foreground flex flex-col`}>
 
       {/* ── Top nav ─────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 h-12 border-b border-border bg-background/80 backdrop-blur-md flex items-center shrink-0">
+      <header className="sticky top-0 z-50 h-16 border-b border-border bg-background/80 backdrop-blur-md flex items-center shrink-0">
         <div className="w-full max-w-[90rem] mx-auto px-6 flex items-center justify-between gap-4">
 
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm">
             <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
-              NovaDNS
+              <Logo size="sm" />
             </Link>
             <span className="text-border select-none">/</span>
             <span className="text-foreground font-medium">Docs</span>
