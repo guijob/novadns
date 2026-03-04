@@ -173,7 +173,7 @@ export function DashboardShell({
           <HeaderSection />
           <div className="ml-auto flex items-center gap-3">
             <FeedbackButton />
-            <Link href="/docs" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/docs" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
               Docs
             </Link>
             <UserMenu email={email} plan={plan} settingsHref={settingsHref} />

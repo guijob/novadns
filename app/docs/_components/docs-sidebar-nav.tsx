@@ -50,7 +50,7 @@ export function DocsSidebarNav() {
     <nav className="space-y-6">
       {navGroups.map(group => (
         <div key={group.label}>
-          <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2 px-3">
+          <p className="text-[10px] font-mono uppercase tracking-widest mb-2 px-3">
             {group.label}
           </p>
           <ul className="space-y-px">

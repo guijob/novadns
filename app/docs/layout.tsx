@@ -8,6 +8,8 @@ import { TableOfContents } from "./_components/table-of-contents"
 import { PageFeedback } from "./_components/page-feedback"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { MarketingFooter } from "@/components/marketing-footer"
+import { DocsSearch } from "./_components/docs-search"
+import { DocsFeedbackButton } from "./_components/docs-feedback-button"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -30,13 +32,15 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
 
           {/* Right actions */}
           <div className="flex items-center gap-2">
-            <ThemeToggle />
+            <DocsSearch />
+            <DocsFeedbackButton />
             <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/" />}>
-              Back to site
+              Homepage
             </Button>
             <Button size="sm" nativeButton={false} render={<Link href="/dashboard" />}>
               Dashboard
             </Button>
+            <ThemeToggle />
           </div>
         </div>
       </header>

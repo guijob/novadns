@@ -191,6 +191,26 @@ export async function sendFeedbackEmail(from: string, message: string) {
   })
 }
 
+export async function sendDocsGeneralFeedbackEmail(message: string, email?: string) {
+  const base = process.env.BASE_DOMAIN ?? "novaip.link"
+  const from = email ?? "anonymous"
+
+  await resend.emails.send({
+    from:    `NovaDNS Docs Feedback <noreply@${base}>`,
+    to:      `feedback@${base}`,
+    ...(email ? { replyTo: email } : {}),
+    subject: `Docs feedback from ${from}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+        <h1 style="font-size:18px;font-weight:700;margin:0 0 16px">Docs feedback</h1>
+        <p style="font-size:14px;color:#444;white-space:pre-wrap;margin:0 0 16px">${message.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
+        <hr style="border:none;border-top:1px solid #eee;margin:16px 0"/>
+        <p style="font-size:12px;color:#999">From: ${from}</p>
+      </div>
+    `,
+  })
+}
+
 export async function sendPasswordResetEmail(to: string, token: string) {
   const base    = process.env.BASE_DOMAIN ?? "novaip.link"
   const resetUrl = `https://${base}/reset-password?token=${token}`

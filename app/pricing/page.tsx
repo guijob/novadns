@@ -309,7 +309,7 @@ export default function PricingPage() {
                     </span>
                   </button>
                   {openFaq === i && (
-                    <div className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed">
+                    <div className="p-5 text-sm text-muted-foreground leading-relaxed">
                       {faq.a}
                     </div>
                   )}
