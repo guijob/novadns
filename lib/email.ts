@@ -17,7 +17,7 @@ function logo() {
   `
 }
 
-function layout(content: string) {
+export function layout(content: string) {
   return `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#111">
       ${logo()}
@@ -40,12 +40,16 @@ export async function sendVerificationEmail(to: string, name: string, token: str
   const link = dashUrl(`/api/auth/verify-email?token=${token}`)
   await resend.emails.send({
     from: from(), to,
-    subject: "Verify your NovaDNS email",
+    subject: "One quick step to activate your account - NovaDNS",
     html: layout(`
-      <h1 style="font-size:20px;font-weight:700;margin:0 0 8px">Verify your email</h1>
-      <p style="font-size:14px;color:#444;margin:0 0 24px">Hi ${name}, click the button below to confirm your email address and activate your account.</p>
+      <p style="font-size:14px;color:#444;margin:0 0 24px">Hi ${name},</p>
+      <p style="font-size:14px;color:#444;margin:0 0 24px">Thanks for signing up for NovaDNS.</p>
+      <p style="font-size:14px;color:#444;margin:0 0 24px">Just one quick step left — confirm your email address.</p>
+      <p style="font-size:14px;color:#444;margin:0 0 24px">Verify here:</p>
       ${btn("Verify email", link)}
-      <p style="font-size:12px;color:#999;margin:16px 0 0">This link expires in 24 hours. If you didn't create an account, you can ignore this email.</p>
+      <p style="font-size:12px;color:#999;margin:16px 0 0">This link expires in 24 hours. If you didn't sign up, feel free to ignore this email.</p>
+      <p style="font-size:12px;color:#999;margin:16px 0 0">Cheers,</p>
+      <p style="font-size:12px;color:#999;margin:16px 0 0">NovaDNS</p>
     `),
   })
 }
