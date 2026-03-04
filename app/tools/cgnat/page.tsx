@@ -22,18 +22,16 @@ const DOT_GRID: React.CSSProperties = {
   backgroundSize: "24px 24px",
 }
 
-const statusConfig: Record<
-  Exclude<Status, "loading">,
-  {
-    icon: React.ComponentType<{ className?: string }>
-    iconClass: string
-    badge: string
-    badgeClass: string
-    borderClass: string
-    headline: string
-    body: string
-  }
-> = {
+const statusConfig: Record<Exclude<Status, "loading">, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  icon: any
+  iconClass: string
+  badge: string
+  badgeClass: string
+  borderClass: string
+  headline: string
+  body: string
+}> = {
   cgnat: {
     icon: Cancel01Icon,
     iconClass: "text-destructive",
