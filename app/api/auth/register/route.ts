@@ -40,5 +40,5 @@ export async function POST(req: NextRequest) {
   await setSessionCookie(client.id)
   sendWelcomeEmail(email.toLowerCase().trim(), name.trim()).catch(() => {})
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, slug })
 }

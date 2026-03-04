@@ -54,7 +54,8 @@ export default function RegisterPage() {
     })
 
     if (res.ok) {
-      router.push("/dashboard")
+      const { slug } = await res.json()
+      router.push(`/${slug}`)
     } else {
       const { error } = await res.json()
       setError(error ?? "Registration failed")
