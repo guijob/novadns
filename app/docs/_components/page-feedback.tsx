@@ -27,14 +27,14 @@ export function PageFeedback() {
 
   if (phase === "sent") {
     return (
-      <div className="border-t border-border mt-12 pt-8">
+      <div className="border-t border-border mt-6 pt-8 flex flex-col items-center gap-2">
         <p className="text-sm text-muted-foreground">Thanks for the feedback!</p>
       </div>
     )
   }
 
   return (
-    <div className="border-t border-border mt-12 pt-8">
+    <div className="border-t border-border mt-6 pt-8">
       <div className="flex items-center justify-center gap-4">
         <p className="text-sm text-muted-foreground">Was this page helpful?</p>
         <div className="flex items-center gap-2">
