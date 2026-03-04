@@ -36,6 +36,7 @@ import {
   ArrowRight01Icon,
 } from "@hugeicons/core-free-icons"
 import { getSession } from "@/lib/auth"
+import { Typewriter } from "@/components/typewriter"
 import { LandingFaq } from "@/components/landing-faq"
 import { MarketingFooter } from "@/components/marketing-footer"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -251,7 +252,7 @@ export default async function LandingPage() {
 
             <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-bold tracking-tight leading-[1.06] mb-5">
               Dynamic DNS<br />
-              <span className="text-primary">for cameras, IoT, and{" "}<br className="hidden sm:block" />connected devices.</span>
+              <span className="text-primary">for <Typewriter /></span>
             </h1>
 
             <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-8 max-w-[420px]">
