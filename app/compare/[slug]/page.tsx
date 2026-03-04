@@ -59,7 +59,7 @@ export default async function ComparePage({ params }: { params: Promise<{ slug: 
         where: eq(clients.id, session.id),
         columns: { slug: true },
       })
-      dashboardSlug = client?.slug ?? session.id
+      dashboardSlug = client?.slug ?? String(session.id)
     }
   }
 
