@@ -4,6 +4,7 @@ import React, { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { MarketingFooter } from "@/components/marketing-footer"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   CheckmarkCircle02Icon,
@@ -133,6 +134,7 @@ export default function PricingPage() {
             <span className="font-semibold text-sm tracking-tight">NovaDNS</span>
           </Link>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/login" />}>Log in</Button>
             <Button size="sm" nativeButton={false} render={<Link href="/register" />}>Get started</Button>
           </div>

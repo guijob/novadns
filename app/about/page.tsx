@@ -11,6 +11,7 @@ import {
   CheckmarkCircle02Icon,
 } from "@hugeicons/core-free-icons"
 import { MarketingFooter } from "@/components/marketing-footer"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export const metadata: Metadata = {
   title: "About — NovaDNS",
@@ -70,6 +71,7 @@ export default function AboutPage() {
             <Link href="/about"   className="text-foreground">About</Link>
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/login" />}>Log in</Button>
             <Button size="sm" nativeButton={false} render={<Link href="/register" />}>Get started</Button>
           </div>

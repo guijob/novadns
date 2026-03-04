@@ -68,7 +68,7 @@ export default function ContactPage() {
       </header>
 
       {/* Body */}
-      <main className="flex-1 grid lg:grid-cols-[1fr_1fr]">
+      <main className="flex-1 min-h-[calc(100vh-3rem)] grid lg:grid-cols-[1fr_1fr]">
 
         {/* ── Left panel ───────────────────────────────────────── */}
         <div className="relative flex flex-col justify-between border-r border-border px-10 py-14 overflow-hidden bg-muted/20">

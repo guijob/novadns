@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { DocsSidebarNav } from "./_components/docs-sidebar-nav"
 import { TableOfContents } from "./_components/table-of-contents"
 import { PageFeedback } from "./_components/page-feedback"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { MarketingFooter } from "@/components/marketing-footer"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -27,6 +29,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
 
           {/* Right actions */}
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/" />}>
               Back to site
             </Button>
@@ -62,6 +65,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
           </div>
         </aside>
       </div>
+      <MarketingFooter />
     </div>
   )
 }

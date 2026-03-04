@@ -38,6 +38,7 @@ import {
 import { getSession } from "@/lib/auth"
 import { LandingFaq } from "@/components/landing-faq"
 import { MarketingFooter } from "@/components/marketing-footer"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 // ─── constants ──────────────────────────────────────────────────────────────
 
@@ -216,6 +217,7 @@ export default async function LandingPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <>
               <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/login" />}>
                 Log in

@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { competitors, type FeatureValue } from "./[slug]/data"
 
 export const metadata: Metadata = {
@@ -46,6 +47,7 @@ export default function CompareAllPage() {
             <span className="text-foreground font-medium">Compare</span>
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/login" />}>
               Log in
             </Button>

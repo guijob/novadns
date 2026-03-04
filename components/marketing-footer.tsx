@@ -4,9 +4,10 @@ const columns = [
   {
     heading: "Product",
     links: [
-      { href: "/#features", label: "Features" },
-      { href: "/pricing",   label: "Pricing"  },
-      { href: "/docs",      label: "Docs"     },
+      { href: "/#features",   label: "Features"      },
+      { href: "/pricing",     label: "Pricing"       },
+      { href: "/docs",        label: "Docs"          },
+      { href: "/tools/cgnat", label: "CGNAT Checker" },
     ],
   },
   {
