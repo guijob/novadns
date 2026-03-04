@@ -2,7 +2,7 @@ import { Resend } from "resend"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-function base() { return process.env.BASE_DOMAIN ?? "novaip.link" }
+function base() { return process.env.APP_DOMAIN ?? "novadns.io" }
 function from() { return `NovaDNS <noreply@${base()}>` }
 function dashUrl(path = "") { return `https://${base()}${path}` }
 
@@ -169,7 +169,7 @@ export async function sendSubscriptionCanceledEmail(
 }
 
 export async function sendDocsFeedbackEmail(page: string, helpful: boolean, comment: string) {
-  const base = process.env.BASE_DOMAIN ?? "novaip.link"
+  const base = process.env.APP_DOMAIN ?? "novadns.io"
 
   await resend.emails.send({
     from:    `NovaDNS Docs <noreply@${base}>`,
@@ -189,7 +189,7 @@ export async function sendDocsFeedbackEmail(page: string, helpful: boolean, comm
 }
 
 export async function sendFeedbackEmail(from: string, message: string) {
-  const base = process.env.BASE_DOMAIN ?? "novaip.link"
+  const base = process.env.APP_DOMAIN ?? "novadns.io"
 
   await resend.emails.send({
     from:    `NovaDNS Feedback <noreply@${base}>`,
@@ -208,7 +208,7 @@ export async function sendFeedbackEmail(from: string, message: string) {
 }
 
 export async function sendDocsGeneralFeedbackEmail(message: string, email?: string) {
-  const base = process.env.BASE_DOMAIN ?? "novaip.link"
+  const base = process.env.APP_DOMAIN ?? "novadns.io"
   const from = email ?? "anonymous"
 
   await resend.emails.send({
@@ -228,7 +228,7 @@ export async function sendDocsGeneralFeedbackEmail(message: string, email?: stri
 }
 
 export async function sendPasswordResetEmail(to: string, token: string) {
-  const base    = process.env.BASE_DOMAIN ?? "novaip.link"
+  const base    = process.env.APP_DOMAIN ?? "novadns.io"
   const resetUrl = `https://${base}/reset-password?token=${token}`
 
   await resend.emails.send({
