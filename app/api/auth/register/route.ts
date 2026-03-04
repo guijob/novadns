@@ -43,7 +43,12 @@ export async function POST(req: NextRequest) {
   const slug = await findAvailableSlug(slugBase)
   await db.update(clients).set({ slug }).where(eq(clients.id, client.id))
 
-  sendVerificationEmail(email.toLowerCase().trim(), name.trim(), verificationToken).catch(() => {})
+  try {
+    await sendVerificationEmail(email.toLowerCase().trim(), name.trim(), verificationToken)
+  } catch (err) {
+    console.error("Failed to send verification email:", err)
+    return NextResponse.json({ error: "Account created but we couldn't send the verification email. Please contact support." }, { status: 500 })
+  }
 
   return NextResponse.json({ pending: true })
 }
