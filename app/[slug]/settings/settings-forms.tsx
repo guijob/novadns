@@ -21,6 +21,124 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
+// ─── Avatar ──────────────────────────────────────────────────────────────────
+
+export function AvatarForm({ initialUrl, name }: { initialUrl: string | null; name: string }) {
+  const [preview, setPreview] = useState<string | null>(initialUrl)
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState("")
+  const [success, setSuccess] = useState("")
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  function resizeToDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      const url = URL.createObjectURL(file)
+      img.onload = () => {
+        const SIZE = 256
+        const canvas = document.createElement("canvas")
+        canvas.width = SIZE; canvas.height = SIZE
+        const ctx = canvas.getContext("2d")!
+        const scale = Math.max(SIZE / img.width, SIZE / img.height)
+        const w = img.width * scale, h = img.height * scale
+        ctx.drawImage(img, (SIZE - w) / 2, (SIZE - h) / 2, w, h)
+        URL.revokeObjectURL(url)
+        resolve(canvas.toDataURL("image/jpeg", 0.85))
+      }
+      img.onerror = reject
+      img.src = url
+    })
+  }
+
+  async function handleFile(file: File) {
+    if (!file.type.startsWith("image/")) { setError("Please select an image file"); return }
+    setError(""); setSuccess(""); setLoading(true)
+    try {
+      const dataUrl = await resizeToDataUrl(file)
+      setPreview(dataUrl)
+      const res  = await fetch("/api/settings/avatar", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatarUrl: dataUrl }),
+      })
+      const data = await res.json()
+      if (res.ok) setSuccess("Avatar updated")
+      else setError(data.error ?? "Something went wrong")
+    } catch {
+      setError("Failed to process image")
+    }
+    setLoading(false)
+  }
+
+  async function handleRemove() {
+    setError(""); setSuccess(""); setLoading(true)
+    const res  = await fetch("/api/settings/avatar", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ avatarUrl: null }),
+    })
+    const data = await res.json()
+    if (res.ok) { setPreview(null); setSuccess("Avatar removed") }
+    else setError(data.error ?? "Something went wrong")
+    setLoading(false)
+  }
+
+  const initials = name.split(" ").map(p => p[0]).join("").toUpperCase().slice(0, 2)
+
+  return (
+    <Section label="Avatar">
+      <div className="flex items-center gap-5 px-4 py-4">
+        {/* Avatar display */}
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={loading}
+          className="relative shrink-0 group cursor-pointer"
+          title="Click to change avatar"
+        >
+          <div className="size-16 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center text-xl font-semibold text-muted-foreground select-none">
+            {preview
+              ? <img src={preview} alt="Avatar" className="size-full object-cover" />
+              : initials}
+          </div>
+          <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <span className="text-white text-[10px] font-medium">Change</span>
+          </div>
+        </button>
+
+        {/* Actions */}
+        <div className="space-y-1.5 min-w-0">
+          <p className="text-xs text-muted-foreground">JPG, PNG or GIF · max 5 MB · resized to 256×256</p>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={() => inputRef.current?.click()} disabled={loading} className="h-7 text-xs">
+              {loading ? "Saving…" : "Upload image"}
+            </Button>
+            {preview && (
+              <button
+                type="button"
+                onClick={handleRemove}
+                disabled={loading}
+                className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+          <Feedback error={error} success={success} />
+        </div>
+
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = "" }}
+        />
+      </div>
+    </Section>
+  )
+}
+
 // ─── shared primitives ───────────────────────────────────────────────────────
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
@@ -370,16 +488,15 @@ export function UsernameForm({ currentSlug }: { currentSlug: string }) {
   )
 }
 
-// ─── Profile ─────────────────────────────────────────────────────────────────
+// ─── Display name ────────────────────────────────────────────────────────────
 
-export function ProfileForm({ initialName, initialEmail }: { initialName: string; initialEmail: string }) {
+export function DisplayNameForm({ initialName }: { initialName: string }) {
   const [name,    setName]    = useState(initialName)
-  const [email,   setEmail]   = useState(initialEmail)
   const [error,   setError]   = useState("")
   const [success, setSuccess] = useState("")
   const [loading, setLoading] = useState(false)
 
-  const dirty = name !== initialName || email !== initialEmail
+  const dirty = name !== initialName
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -387,52 +504,67 @@ export function ProfileForm({ initialName, initialEmail }: { initialName: string
     const res = await fetch("/api/settings/profile", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email }),
+      body: JSON.stringify({ name, email: undefined }),
     })
     const data = await res.json()
-    if (res.ok) setSuccess("Profile updated")
+    if (res.ok) setSuccess("Name updated")
     else setError(data.error ?? "Something went wrong")
     setLoading(false)
   }
 
   return (
-    <Section label="Profile">
+    <Section label="Display name">
       <form onSubmit={handleSubmit}>
-        <div className="divide-y divide-border">
-          {/* Name row */}
-          <div className="grid grid-cols-[140px_1fr] items-center gap-4 px-4 py-3">
-            <label htmlFor="name" className="text-xs text-muted-foreground">Name</label>
-            <Input
-              id="name"
-              name="name"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              required
-              className="h-7 text-sm"
-              disabled={loading}
-            />
-          </div>
-          {/* Email row */}
-          <div className="grid grid-cols-[140px_1fr] items-center gap-4 px-4 py-3">
-            <label htmlFor="email" className="text-xs text-muted-foreground">Email</label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              className="h-7 text-sm"
-              disabled={loading}
-            />
-          </div>
+        <div className="grid grid-cols-[140px_1fr] items-center gap-4 px-4 py-3">
+          <label htmlFor="name" className="text-xs text-muted-foreground">Name</label>
+          <Input id="name" name="name" value={name} onChange={e => setName(e.target.value)} required className="h-7 text-sm" disabled={loading} />
         </div>
-
-        {/* Footer */}
         <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-border bg-muted/20">
           <Feedback error={error} success={success} />
           <Button type="submit" size="sm" disabled={loading || !dirty} className="ml-auto">
-            {loading ? "Saving…" : "Save changes"}
+            {loading ? "Saving…" : "Save"}
+          </Button>
+        </div>
+      </form>
+    </Section>
+  )
+}
+
+// ─── Email ────────────────────────────────────────────────────────────────────
+
+export function EmailForm({ initialEmail, initialName }: { initialEmail: string; initialName: string }) {
+  const [email,   setEmail]   = useState(initialEmail)
+  const [error,   setError]   = useState("")
+  const [success, setSuccess] = useState("")
+  const [loading, setLoading] = useState(false)
+
+  const dirty = email !== initialEmail
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setError(""); setSuccess(""); setLoading(true)
+    const res = await fetch("/api/settings/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: initialName, email }),
+    })
+    const data = await res.json()
+    if (res.ok) setSuccess("Email updated")
+    else setError(data.error ?? "Something went wrong")
+    setLoading(false)
+  }
+
+  return (
+    <Section label="Email address">
+      <form onSubmit={handleSubmit}>
+        <div className="grid grid-cols-[140px_1fr] items-center gap-4 px-4 py-3">
+          <label htmlFor="email" className="text-xs text-muted-foreground">Email</label>
+          <Input id="email" name="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required className="h-7 text-sm" disabled={loading} />
+        </div>
+        <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-border bg-muted/20">
+          <Feedback error={error} success={success} />
+          <Button type="submit" size="sm" disabled={loading || !dirty} className="ml-auto">
+            {loading ? "Saving…" : "Save"}
           </Button>
         </div>
       </form>

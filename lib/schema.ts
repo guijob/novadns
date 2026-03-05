@@ -29,6 +29,7 @@ export const clients = pgTable("clients", {
   totpSecret:            varchar("totp_secret",            { length: 64  }),
   mfaEnabled:            boolean("mfa_enabled").default(false).notNull(),
   mfaBackupCodes:        text("mfa_backup_codes").array(),
+  avatarUrl:             text("avatar_url"),
   createdAt:             timestamp("created_at").notNull().defaultNow(),
   updatedAt:             timestamp("updated_at").notNull().defaultNow(),
 })
@@ -41,6 +42,7 @@ export const teams = pgTable("teams", {
   name:                 varchar("name", { length: 100 }).notNull(),
   slug:                 varchar("slug", { length: 39 }).unique(),
   plan:                 varchar("plan", { length: 20 }).notNull().default("free"),
+  avatarUrl:            text("avatar_url"),
   paddleCustomerId:     varchar("paddle_customer_id",     { length: 255 }),
   paddleSubscriptionId: varchar("paddle_subscription_id", { length: 255 }),
   createdAt:            timestamp("created_at").notNull().defaultNow(),

@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  UserIcon,
   Settings01Icon,
   LogoutIcon,
   Home01Icon,
@@ -33,10 +32,11 @@ import {
 interface UserMenuProps {
   email: string
   plan: string
+  avatarUrl?: string | null
   settingsHref?: string
 }
 
-export function UserMenu({ email, plan, settingsHref = "/dashboard/settings" }: UserMenuProps) {
+export function UserMenu({ email, plan, avatarUrl, settingsHref = "/dashboard/settings" }: UserMenuProps) {
   const router = useRouter()
   const { theme, setTheme } = useTheme()
 
@@ -47,9 +47,14 @@ export function UserMenu({ email, plan, settingsHref = "/dashboard/settings" }: 
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" size="sm" />}>
-        <HugeiconsIcon icon={UserIcon} strokeWidth={2} />
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger render={
+        <button className="flex size-7 items-center justify-center rounded-full overflow-hidden bg-muted text-xs font-semibold hover:opacity-80 transition-opacity select-none">
+          {avatarUrl
+            ? <img src={avatarUrl} alt="Avatar" className="size-full object-cover" />
+            : email[0]?.toUpperCase() ?? "U"
+          }
+        </button>
+      } />
 
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="font-normal">

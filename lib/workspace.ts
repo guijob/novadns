@@ -4,8 +4,8 @@ import { eq, and } from "drizzle-orm"
 import type { TeamRole } from "./schema"
 
 export type WorkspaceContext =
-  | { type: "personal"; clientId: number; plan: string; slug: string }
-  | { type: "team"; teamId: number; plan: string; slug: string; role: TeamRole }
+  | { type: "personal"; clientId: number; plan: string; slug: string; name: string; avatarUrl?: string | null }
+  | { type: "team"; teamId: number; plan: string; slug: string; name: string; role: TeamRole; avatarUrl?: string | null }
 
 export async function resolveWorkspace(
   slug: string,
@@ -17,7 +17,7 @@ export async function resolveWorkspace(
   })
   if (client) {
     if (client.id !== clientId) return null
-    return { type: "personal", clientId: client.id, plan: client.plan, slug }
+    return { type: "personal", clientId: client.id, plan: client.plan, slug, name: client.name, avatarUrl: client.avatarUrl }
   }
 
   // Check teams
@@ -35,7 +35,7 @@ export async function resolveWorkspace(
   })
   if (!membership) return null
 
-  return { type: "team", teamId: team.id, plan: team.plan, slug, role: membership.role as TeamRole }
+  return { type: "team", teamId: team.id, plan: team.plan, slug, name: team.name, role: membership.role as TeamRole, avatarUrl: team.avatarUrl }
 }
 
 export async function getUserWorkspaces(clientId: number): Promise<WorkspaceContext[]> {
@@ -45,7 +45,7 @@ export async function getUserWorkspaces(clientId: number): Promise<WorkspaceCont
     where: eq(clients.id, clientId),
   })
   if (client?.slug) {
-    workspaces.push({ type: "personal", clientId: client.id, plan: client.plan, slug: client.slug })
+    workspaces.push({ type: "personal", clientId: client.id, plan: client.plan, slug: client.slug, name: client.name, avatarUrl: client.avatarUrl })
   }
 
   const memberships = await db.query.teamMembers.findMany({
@@ -61,7 +61,9 @@ export async function getUserWorkspaces(clientId: number): Promise<WorkspaceCont
         teamId: team.id,
         plan: team.plan,
         slug: team.slug,
+        name: team.name,
         role: membership.role as TeamRole,
+        avatarUrl: team.avatarUrl,
       })
     }
   }

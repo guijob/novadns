@@ -48,6 +48,7 @@ export default async function WorkspaceLayout({
       workspace={workspace}
       email={session.email}
       userName={session.name}
+      avatarUrl={session.avatarUrl ?? null}
       activeCount={activeCount}
       workspaces={userWorkspaces}
       sidebarOpen={sidebarOpen}
