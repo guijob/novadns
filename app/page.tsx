@@ -240,122 +240,100 @@ export default async function LandingPage() {
         <div className="absolute inset-0 opacity-[0.035] dark:opacity-[0.055]" style={DOT_GRID} />
         <div className="absolute inset-0 pointer-events-none" style={GLOW_TOP} />
 
-        <div className="relative max-w-6xl mx-auto px-6 py-20 md:py-28 grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className="relative max-w-5xl mx-auto px-6 pt-20 md:pt-28 text-center">
 
-          {/* Left — headline + CTAs */}
-          <div>
-            <div className="flex flex-wrap items-center gap-2 mb-6">
-              <Badge variant="secondary" className="font-mono text-xs">DynDNS compatible</Badge>
-              <Badge variant="secondary" className="font-mono text-xs">NoIP compatible</Badge>
-              <Badge variant="secondary" className="font-mono text-xs">IPv6 native</Badge>
-            </div>
-
-            <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-bold tracking-tight leading-[1.06] mb-5">
-              Dynamic DNS<br />
-              <span className="text-primary">for <Typewriter /></span>
-            </h1>
-
-            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-8 max-w-[420px]">
-              Keep your cameras, gateways, and device fleets always reachable — with token security and IPv6 subnet support built in.
-            </p>
-
-            <div className="flex flex-wrap gap-3">
-              <Button size="lg" nativeButton={false} render={<Link href="/register" />}>
-                Get Started Free
-                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1 size-4" />
-              </Button>
-              <Button size="lg" variant="outline" nativeButton={false} render={<Link href="/docs" />}>
-                View Docs
-              </Button>
-            </div>
-
-            <div className="mt-10 flex flex-wrap items-center gap-x-2 gap-y-1.5">
-              <span className="text-xs text-muted-foreground font-mono mr-1">works with:</span>
-              {compatClients.slice(0, 6).map((c) => (
-                <span
-                  key={c}
-                  className="text-xs font-mono text-muted-foreground border border-border px-2 py-0.5 hover:border-primary/40 hover:text-foreground transition-colors cursor-default"
-                >
-                  {c}
-                </span>
-              ))}
-              <span className="text-xs text-muted-foreground">+&nbsp;more</span>
-            </div>
+          {/* Badges */}
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+            <Badge variant="secondary" className="font-mono text-xs">DynDNS compatible</Badge>
+            <Badge variant="secondary" className="font-mono text-xs">NoIP compatible</Badge>
+            <Badge variant="secondary" className="font-mono text-xs">IPv6 native</Badge>
           </div>
 
-          {/* Right — host dashboard preview */}
-          <div className="border border-border bg-card shadow-2xl">
-            {/* Panel header */}
-            <div className="border-b border-border px-4 py-3 flex items-center justify-between bg-muted/40">
-              <span className="text-xs font-semibold">My Hosts</span>
-              <div className="flex items-center gap-1.5">
-                <span className="size-1.5 rounded-full bg-green-500" />
-                <span className="text-xs text-muted-foreground">3 online</span>
-              </div>
-            </div>
+          {/* Headline */}
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.06] mb-6">
+            Dynamic DNS<br />
+            <span className="text-primary">for <Typewriter /></span>
+          </h1>
 
-            {/* Host rows */}
-            <div className="divide-y divide-border">
-              {[
-                {
-                  name: "cam-lobby.novaip.link",
-                  ipv4: "203.0.113.42",
-                  ipv6: "2001:db8::1",
-                  seen: "just now",
-                  online: true,
-                },
-                {
-                  name: "cam-warehouse.novaip.link",
-                  ipv4: "198.51.100.7",
-                  ipv6: "2001:db8:a::1",
-                  seen: "2 min ago",
-                  online: true,
-                },
-                {
-                  name: "sensor-hq.novaip.link",
-                  ipv4: "192.0.2.55",
-                  ipv6: "2001:db8:b::1",
-                  seen: "5 min ago",
-                  online: true,
-                },
-                {
-                  name: "gate-south.novaip.link",
-                  ipv4: "203.0.113.88",
-                  ipv6: null,
-                  seen: "3 h ago",
-                  online: false,
-                },
-              ].map((host) => (
-                <div key={host.name} className="px-4 py-3.5 group hover:bg-muted/40 transition-colors">
-                  <div className="flex items-center justify-between gap-3 mb-2">
+          {/* Description */}
+          <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-8 max-w-xl mx-auto">
+            Keep your cameras, gateways, and device fleets always reachable — with token security and IPv6 subnet support built in.
+          </p>
+
+          {/* CTAs */}
+          <div className="flex flex-wrap justify-center gap-3 mb-10">
+            <Button size="lg" nativeButton={false} render={<Link href="/register" />}>
+              Get Started Free
+              <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1 size-4" />
+            </Button>
+            <Button size="lg" variant="outline" nativeButton={false} render={<Link href="/docs" />}>
+              View Docs
+            </Button>
+          </div>
+
+          {/* Compat strip */}
+          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 mb-16">
+            <span className="text-xs text-muted-foreground font-mono mr-1">works with:</span>
+            {compatClients.slice(0, 6).map((c) => (
+              <span
+                key={c}
+                className="text-xs font-mono text-muted-foreground border border-border px-2 py-0.5 hover:border-primary/40 hover:text-foreground transition-colors cursor-default"
+              >
+                {c}
+              </span>
+            ))}
+            <span className="text-xs text-muted-foreground">+&nbsp;more</span>
+          </div>
+
+          {/* Dashboard preview — centered wide card with bottom-fade peek */}
+          <div className="relative">
+            <div className="absolute bottom-0 inset-x-0 h-28 bg-gradient-to-t from-background to-transparent z-10 pointer-events-none" />
+
+            <div className="border border-border bg-card shadow-2xl text-left">
+              {/* Panel header */}
+              <div className="border-b border-border px-5 py-3 flex items-center justify-between bg-muted/40">
+                <span className="text-xs font-semibold">My Hosts</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="size-1.5 rounded-full bg-green-500" />
+                  <span className="text-xs text-muted-foreground">3 online</span>
+                </div>
+              </div>
+
+              {/* Host rows — horizontal layout to use full width */}
+              <div className="divide-y divide-border">
+                {[
+                  { name: "cam-lobby.novaip.link",     ipv4: "203.0.113.42",  ipv6: "2001:db8::1",   seen: "just now",  online: true  },
+                  { name: "cam-warehouse.novaip.link", ipv4: "198.51.100.7",  ipv6: "2001:db8:a::1", seen: "2 min ago", online: true  },
+                  { name: "sensor-hq.novaip.link",     ipv4: "192.0.2.55",    ipv6: "2001:db8:b::1", seen: "5 min ago", online: true  },
+                  { name: "gate-south.novaip.link",    ipv4: "203.0.113.88",  ipv6: null,            seen: "3 h ago",   online: false },
+                ].map((host) => (
+                  <div key={host.name} className="px-5 py-3.5 flex items-center justify-between gap-4 group hover:bg-muted/40 transition-colors">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span
-                        className={`size-1.5 rounded-full shrink-0 ${host.online ? "bg-green-500" : "bg-muted-foreground/40"}`}
-                      />
+                      <span className={`size-1.5 rounded-full shrink-0 ${host.online ? "bg-green-500" : "bg-muted-foreground/40"}`} />
                       <span className="text-sm font-medium truncate">{host.name}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground shrink-0">{host.seen}</span>
-                  </div>
-                  <div className="pl-3.5 space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono text-muted-foreground w-7">IPv4</span>
-                      <span className="text-xs font-mono text-foreground/80">{host.ipv4}</span>
+                    <div className="hidden sm:flex items-center gap-6 shrink-0">
+                      <div className="space-y-0.5 text-xs font-mono">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-muted-foreground w-7">IPv4</span>
+                          <span className="text-foreground/80 w-36">{host.ipv4}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-muted-foreground w-7">IPv6</span>
+                          <span className="text-foreground/80 w-36">{host.ipv6 ?? <span className="text-muted-foreground/40">—</span>}</span>
+                        </div>
+                      </div>
+                      <span className="text-xs text-muted-foreground w-16 text-right">{host.seen}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono text-muted-foreground w-7">IPv6</span>
-                      <span className="text-xs font-mono text-foreground/80">
-                        {host.ipv6 ?? <span className="text-muted-foreground/50">—</span>}
-                      </span>
-                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            {/* Panel footer */}
-            <div className="border-t border-border px-4 py-2.5 flex items-center justify-between bg-muted/20">
-              <span className="text-xs text-muted-foreground">novaip.link</span>
-              <span className="text-xs text-muted-foreground font-mono">4 devices · free plan</span>
+              {/* Panel footer */}
+              <div className="border-t border-border px-5 py-2.5 flex items-center justify-between bg-muted/20">
+                <span className="text-xs text-muted-foreground">novaip.link</span>
+                <span className="text-xs text-muted-foreground font-mono">4 devices · free plan</span>
+              </div>
             </div>
           </div>
         </div>

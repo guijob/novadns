@@ -11,6 +11,7 @@ const TARGETS = [
   "connected devices.",
 ]
 
+
 const TYPE_SPEED = 80
 const DELETE_SPEED = 50
 const PAUSE_AFTER_TYPE = 2000
