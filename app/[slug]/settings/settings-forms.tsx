@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { CrownIcon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons"
 import { PLANS, PAID_PLANS, isPaidPlan, type PlanKey } from "@/lib/plans"
+import { cn } from "@/lib/utils"
 import { unlinkGoogle, unlinkMicrosoft, updateClientSlug } from "@/lib/actions"
 import {
   AlertDialog,
@@ -288,104 +289,143 @@ export function PlanSection({ plan, email, clientId, priceIds, teamId, teamName,
     }
   }
 
-  const currentPlan = PLANS[plan as keyof typeof PLANS] ?? PLANS.free
-  const sectionLabel = teamName ? `${teamName} — Plan` : "Plan"
+  const currentPlan  = PLANS[plan as keyof typeof PLANS] ?? PLANS.free
+  const ALL_PLANS    = (["free", ...PAID_PLANS] as PlanKey[])
+  const MAX_HOSTS    = 500
 
   return (
-    <Section label={sectionLabel}>
-      {(upgraded || planSuccess) && (
-        <div className="px-4 py-2.5 bg-green-50 dark:bg-green-950 border-b border-green-200 dark:border-green-800">
-          <p className="text-xs text-green-700 dark:text-green-300 font-medium">
-            {planSuccess ? "Plan updated successfully." : "Plan upgraded successfully. Welcome!"}
-          </p>
-        </div>
-      )}
-      {planError && (
-        <div className="px-4 py-2.5 border-b border-destructive/30 bg-destructive/5">
-          <p className="text-xs text-destructive">{planError}</p>
-        </div>
-      )}
+    <div className="space-y-3">
+      <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/50 select-none">
+        {teamName ? `${teamName} — Plan` : "Plan"}
+      </p>
 
-      {/* Current plan */}
-      <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-border">
-        <div className="flex items-center gap-2">
-          {isPaidPlan(plan) && <HugeiconsIcon icon={CrownIcon} strokeWidth={1.5} className="size-4 text-primary" />}
-          <span className="font-medium text-sm">{currentPlan.label} plan</span>
-          <span className="text-xs font-mono text-muted-foreground">— {currentPlan.limit} hosts</span>
-        </div>
-        <span className="text-xs font-mono text-muted-foreground">
-          {currentPlan.monthlyPrice === 0 ? "$0 / month" : `$${currentPlan.monthlyPrice} / month`}
-        </span>
-      </div>
-
-      {/* Tier table */}
-      <div className="divide-y divide-border">
-        {PAID_PLANS.map(key => {
-          const tier       = PLANS[key]
-          const isCurrent  = plan === key
-          const anyLoading = loading !== null
-
-          return (
-            <div
-              key={key}
-              className={`flex items-center justify-between gap-4 px-4 py-3 ${isCurrent ? "bg-primary/5" : ""}`}
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-20 shrink-0">
-                  <span className={`text-sm font-medium ${isCurrent ? "text-primary" : ""}`}>{tier.label}</span>
-                </div>
-                <span className="text-xs text-muted-foreground font-mono">{tier.limit} hosts</span>
-              </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <span className="text-xs font-mono text-muted-foreground">${tier.monthlyPrice}/mo</span>
-                {isCurrent ? (
-                  <span className="text-xs font-medium text-primary flex items-center gap-1">
-                    <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-3.5" />
-                    Current
-                  </span>
-                ) : !canManage ? (
-                  null
-                ) : isPaidPlan(plan) ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs"
-                    disabled={anyLoading}
-                    onClick={() => setPendingPlan(key)}
-                  >
-                    {loading === key ? "Updating…" : tier.limit > PLANS[plan as PlanKey].limit ? "Upgrade" : "Downgrade"}
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs"
-                    disabled={anyLoading || !paddle}
-                    onClick={() => handleSubscribe(key)}
-                  >
-                    {loading === key ? "Redirecting…" : "Subscribe"}
-                  </Button>
-                )}
-              </div>
+      <div className="border border-border">
+        {/* Current plan header */}
+        <div className="flex items-center justify-between gap-4 px-4 py-4 border-b border-border bg-muted/20">
+          <div className="flex items-center gap-3">
+            {isPaidPlan(plan)
+              ? <HugeiconsIcon icon={CrownIcon} strokeWidth={1.5} className="size-5 text-primary shrink-0" />
+              : <div className="size-5 rounded-full border-2 border-border shrink-0" />
+            }
+            <div>
+              <p className="text-sm font-semibold leading-none">{currentPlan.label}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{currentPlan.limit} hosts included</p>
             </div>
-          )
-        })}
-      </div>
-
-      {/* Footer action */}
-      <div className="px-4 py-3 border-t border-border bg-muted/20">
-        {!canManage ? (
-          <p className="text-xs text-muted-foreground">Only the team owner can manage billing.</p>
-        ) : isPaidPlan(plan) ? (
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-xs text-muted-foreground">Cancel or update payment method via the billing portal.</p>
-            <Button size="sm" variant="outline" onClick={handlePortal} disabled={loading !== null}>
-              {loading === "portal" ? "Redirecting…" : "Manage subscription"}
-            </Button>
           </div>
-        ) : (
-          <p className="text-xs text-muted-foreground">Subscribe to a paid plan to increase your host limit.</p>
+          <div className="text-right">
+            <p className="text-lg font-mono font-bold tabular-nums leading-none">
+              {currentPlan.monthlyPrice === 0 ? "Free" : `$${currentPlan.monthlyPrice}`}
+            </p>
+            {currentPlan.monthlyPrice > 0 && (
+              <p className="text-[10px] text-muted-foreground mt-0.5">/month</p>
+            )}
+          </div>
+        </div>
+
+        {/* Status banners */}
+        {(upgraded || planSuccess) && (
+          <div className="px-4 py-2.5 bg-green-50 dark:bg-green-950/50 border-b border-green-200 dark:border-green-800">
+            <p className="text-xs text-green-700 dark:text-green-400 font-medium">
+              {planSuccess ? "Plan updated successfully." : "Plan upgraded successfully. Welcome!"}
+            </p>
+          </div>
         )}
+        {planError && (
+          <div className="px-4 py-2.5 border-b border-destructive/30 bg-destructive/5">
+            <p className="text-xs text-destructive">{planError}</p>
+          </div>
+        )}
+
+        {/* Plan rows */}
+        <div className="divide-y divide-border">
+          {ALL_PLANS.map((key, index) => {
+            const tier      = PLANS[key]
+            const isCurrent = plan === key
+            const isUpgrade = tier.limit > currentPlan.limit
+            const fillPct   = Math.round((tier.limit / MAX_HOSTS) * 100)
+
+            return (
+              <div
+                key={key}
+                className={cn(
+                  "group flex items-center gap-4 px-4 py-3 border-l-2 transition-colors duration-150",
+                  "animate-in fade-in slide-in-from-left-1 fill-mode-both duration-300",
+                  isCurrent
+                    ? "border-l-primary bg-primary/5"
+                    : "border-l-transparent hover:bg-muted/30"
+                )}
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                {/* Name + capacity bar */}
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className={cn("text-sm font-medium", isCurrent ? "text-primary" : "")}>
+                      {tier.label}
+                    </span>
+                    <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
+                      {tier.limit} hosts
+                    </span>
+                    {isCurrent && (
+                      <span className="text-[9px] font-mono uppercase tracking-wide bg-primary/15 text-primary px-1.5 py-px">
+                        active
+                      </span>
+                    )}
+                  </div>
+                  <div className="h-1 bg-muted rounded-full overflow-hidden w-full max-w-40">
+                    <div
+                      className={cn(
+                        "h-full rounded-full transition-all duration-700 ease-out",
+                        isCurrent ? "bg-primary" : "bg-muted-foreground/20 group-hover:bg-muted-foreground/35"
+                      )}
+                      style={{ width: `${fillPct}%`, transitionDelay: `${index * 60 + 150}ms` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Price */}
+                <div className="shrink-0 w-14 text-right">
+                  <span className={cn("text-sm font-mono font-semibold tabular-nums", isCurrent ? "text-foreground" : "text-muted-foreground")}>
+                    {tier.monthlyPrice === 0 ? "Free" : `$${tier.monthlyPrice}`}
+                  </span>
+                  {tier.monthlyPrice > 0 && (
+                    <span className="block text-[10px] text-muted-foreground/60">/mo</span>
+                  )}
+                </div>
+
+                {/* Action */}
+                <div className="shrink-0 w-[90px] flex justify-end">
+                  {isCurrent ? (
+                    <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4 text-primary" />
+                  ) : !canManage ? null : isPaidPlan(plan) ? (
+                    <Button size="sm" variant="outline" className="h-7 text-xs" disabled={loading !== null} onClick={() => setPendingPlan(key)}>
+                      {loading === key ? "Updating…" : isUpgrade ? "Upgrade" : "Downgrade"}
+                    </Button>
+                  ) : key !== "free" ? (
+                    <Button size="sm" variant="outline" className="h-7 text-xs" disabled={loading !== null || !paddle} onClick={() => handleSubscribe(key)}>
+                      {loading === key ? "Redirecting…" : "Subscribe"}
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 py-3 border-t border-border bg-muted/10">
+          {!canManage ? (
+            <p className="text-xs text-muted-foreground">Only the team owner can manage billing.</p>
+          ) : isPaidPlan(plan) ? (
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-xs text-muted-foreground">Cancel or update payment method via the billing portal.</p>
+              <Button size="sm" variant="outline" onClick={handlePortal} disabled={loading !== null}>
+                {loading === "portal" ? "Redirecting…" : "Manage subscription"}
+              </Button>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">Subscribe to a paid plan to increase your host limit.</p>
+          )}
+        </div>
       </div>
 
       {/* Plan change confirmation dialog */}
@@ -413,10 +453,7 @@ export function PlanSection({ plan, email, clientId, priceIds, teamId, teamName,
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   disabled={loading !== null}
-                  onClick={() => {
-                    handleChangePlan(pendingPlan)
-                    setPendingPlan(null)
-                  }}
+                  onClick={() => { handleChangePlan(pendingPlan); setPendingPlan(null) }}
                 >
                   {isUpgrade ? "Upgrade" : "Downgrade"}
                 </AlertDialogAction>
@@ -425,7 +462,7 @@ export function PlanSection({ plan, email, clientId, priceIds, teamId, teamName,
           )
         })()}
       </AlertDialog>
-    </Section>
+    </div>
   )
 }
 
