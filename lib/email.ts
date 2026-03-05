@@ -186,7 +186,7 @@ export async function sendDocsFeedbackEmail(page: string, helpful: boolean, comm
 
   await resend.emails.send({
     from:    `NovaDNS Docs <noreply@${base}>`,
-    to:      `support@novadns.io`,
+    to:      `support@nexuexa.resend.app`,
     subject: `Docs feedback: ${helpful ? "👍" : "👎"} ${page}`,
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
@@ -206,7 +206,7 @@ export async function sendFeedbackEmail(from: string, message: string) {
 
   await resend.emails.send({
     from:    `NovaDNS Feedback <noreply@${base}>`,
-    to:      `feedback@${base}`,
+    to:      `feedback@nexuexa.resend.app`,
     replyTo: from,
     subject: `Feedback from ${from}`,
     html: `
@@ -226,7 +226,7 @@ export async function sendDocsGeneralFeedbackEmail(message: string, email?: stri
 
   await resend.emails.send({
     from:    `NovaDNS Docs Feedback <noreply@${base}>`,
-    to:      `feedback@${base}`,
+    to:      `feedback@nexuexa.resend.app`,
     ...(email ? { replyTo: email } : {}),
     subject: `Docs feedback from ${from}`,
     html: `
